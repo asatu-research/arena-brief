@@ -1,0 +1,1098 @@
+<meta charset="utf-8">
+<title>Arena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --paper:#EEEDF3; --surface:#F8F7FB; --raise:#FFFFFF;
+  --ink:#191B2A; --ink2:#454761; --ink3:#7B7C93;
+  --line:#D5D3E0; --line-soft:#E4E2ED;
+  --accent:#5A4FA3; --accent-on:#FFFFFF; --accent-wash:rgba(90,79,163,.10);
+  --crit:#B3372C; --warn:#A8760F; --good:#1E7A5A;
+  --crit-wash:rgba(179,55,44,.10); --warn-wash:rgba(168,118,15,.12); --good-wash:rgba(30,122,90,.10);
+  --f-disp:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --rail:236px; --dossier:392px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#121220; --surface:#191927; --raise:#1F1F30;
+    --ink:#EAE9F4; --ink2:#B3B1C8; --ink3:#7E7C95;
+    --line:#2E2E44; --line-soft:#252537;
+    --accent:#9F92F0; --accent-on:#15152A; --accent-wash:rgba(159,146,240,.14);
+    --crit:#E8756A; --warn:#DFAE4C; --good:#4FBF95;
+    --crit-wash:rgba(232,117,106,.13); --warn-wash:rgba(223,174,76,.13); --good-wash:rgba(79,191,149,.13);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121220; --surface:#191927; --raise:#1F1F30;
+  --ink:#EAE9F4; --ink2:#B3B1C8; --ink3:#7E7C95;
+  --line:#2E2E44; --line-soft:#252537;
+  --accent:#9F92F0; --accent-on:#15152A; --accent-wash:rgba(159,146,240,.14);
+  --crit:#E8756A; --warn:#DFAE4C; --good:#4FBF95;
+  --crit-wash:rgba(232,117,106,.13); --warn-wash:rgba(223,174,76,.13); --good-wash:rgba(79,191,149,.13);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--f-body); font-size:14px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+/* header band */
+.band{
+  display:flex;align-items:center;gap:18px;padding:0 20px;height:56px;
+  background:var(--surface);border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:40;
+}
+.mark{display:flex;align-items:baseline;gap:10px;width:calc(var(--rail) - 20px);flex:none}
+.mark b{font-family:var(--f-disp);font-weight:700;font-size:19px;letter-spacing:.16em;text-transform:uppercase}
+.mark span{font-family:var(--f-mono);font-size:9.5px;color:var(--ink3);letter-spacing:.09em;text-transform:uppercase}
+.band-mid{flex:1;min-width:0;overflow:hidden}
+.tape{display:flex;align-items:center;overflow-x:auto;scrollbar-width:none}
+.tape::-webkit-scrollbar{display:none}
+.tape-item{display:flex;align-items:baseline;gap:7px;white-space:nowrap;padding:0 14px;border-left:1px solid var(--line-soft)}
+.tape-item:first-child{border-left:0;padding-left:0}
+.tape-k{font-family:var(--f-mono);font-size:9.5px;color:var(--ink3);letter-spacing:.07em;text-transform:uppercase}
+.tape-v{font-family:var(--f-mono);font-size:13px;font-weight:500;font-variant-numeric:tabular-nums}
+.tape-d{font-family:var(--f-mono);font-size:11px}
+.up{color:var(--good)} .down{color:var(--crit)} .flat{color:var(--ink3)}
+.band-right{display:flex;align-items:center;gap:14px;flex:none}
+.stamp{
+  font-family:var(--f-mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--accent);border:1px solid var(--accent);border-radius:2px;padding:3px 7px;
+  transform:rotate(-1.2deg);opacity:.85;white-space:nowrap;
+}
+.sync{display:flex;align-items:center;gap:7px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink3);white-space:nowrap}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--good);animation:pulse 2.8s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 var(--good-wash)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.theme-btn{width:28px;height:28px;display:grid;place-items:center;border:1px solid var(--line);border-radius:3px;color:var(--ink2);font-family:var(--f-mono);font-size:12px}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* shell */
+.shell{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);min-height:calc(100vh - 56px)}
+.rail{
+  border-right:1px solid var(--line);background:var(--surface);padding:14px 0 40px;
+  position:sticky;top:56px;align-self:start;height:calc(100vh - 56px);overflow-y:auto;
+}
+.arena-btn{width:100%;text-align:left;padding:11px 18px;display:flex;align-items:center;gap:11px;border-left:3px solid transparent;color:var(--ink2)}
+.arena-btn .glyph{width:22px;height:22px;flex:none;display:grid;place-items:center;border:1px solid var(--line);border-radius:3px;font-family:var(--f-mono);font-size:10px;color:var(--ink3)}
+.arena-btn .lbl{font-family:var(--f-disp);font-weight:600;font-size:14.5px;flex:1}
+.arena-btn .cnt{font-family:var(--f-mono);font-size:10.5px;color:var(--ink3)}
+.arena-btn:hover{background:var(--accent-wash);color:var(--ink)}
+.arena-btn[aria-selected="true"]{border-left-color:var(--accent);background:var(--accent-wash);color:var(--ink)}
+.arena-btn[aria-selected="true"] .glyph{border-color:var(--accent);color:var(--accent)}
+
+.rail-sec{padding:20px 18px 0}
+.rail-h{
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);
+  display:flex;justify-content:space-between;align-items:center;
+  padding-bottom:9px;margin-bottom:8px;border-bottom:1px solid var(--line-soft);
+}
+.rail-h button{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.05em;color:var(--accent);text-transform:none}
+.chk{display:flex;align-items:center;gap:9px;padding:4.5px 0;cursor:pointer;color:var(--ink2)}
+.chk:hover{color:var(--ink)}
+.chk input{appearance:none;width:13px;height:13px;flex:none;border:1px solid var(--line);border-radius:2px;background:var(--raise);position:relative;cursor:pointer}
+.chk input:checked{background:var(--accent);border-color:var(--accent)}
+.chk input:checked::after{content:"";position:absolute;left:3.6px;top:1px;width:3.2px;height:7px;border:solid var(--accent-on);border-width:0 1.6px 1.6px 0;transform:rotate(42deg)}
+.chk .t{flex:1;font-size:12.5px;line-height:1.35}
+.chk .n{font-family:var(--f-mono);font-size:10.5px;color:var(--ink3)}
+
+/* workspace */
+.work{display:flex;flex-direction:column;min-width:0}
+.subnav{display:flex;align-items:center;gap:2px;padding:0 20px;height:46px;border-bottom:1px solid var(--line);background:var(--paper);position:sticky;top:56px;z-index:30}
+.subtab{padding:7px 13px;font-size:13px;color:var(--ink3);border-radius:3px;display:flex;align-items:center;gap:7px}
+.subtab:hover{color:var(--ink);background:var(--accent-wash)}
+.subtab[aria-selected="true"]{color:var(--ink);font-weight:600;background:var(--accent-wash);box-shadow:inset 0 0 0 1px var(--line)}
+.subtab .b{font-family:var(--f-mono);font-size:10px;color:var(--ink3)}
+.subnav .spacer{flex:1}
+.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:3px;padding:5px 10px;background:var(--raise);min-width:220px}
+.search input{border:0;background:none;font:inherit;font-size:12.5px;color:var(--ink);width:100%;outline:0}
+.search input::placeholder{color:var(--ink3)}
+.search .ic{font-family:var(--f-mono);font-size:11px;color:var(--ink3)}
+
+.split{display:grid;grid-template-columns:minmax(0,1fr) var(--dossier);flex:1;min-height:0}
+.stream{min-width:0;border-right:1px solid var(--line)}
+.dossier{position:sticky;top:102px;align-self:start;height:calc(100vh - 102px);overflow-y:auto;background:var(--surface)}
+
+/* ledger */
+.lg-head{
+  display:grid;grid-template-columns:76px 104px minmax(0,1fr) 96px 72px;gap:14px;
+  padding:9px 20px;border-bottom:1px solid var(--line);
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3);
+  background:var(--surface);position:sticky;top:102px;z-index:20;
+}
+.row{
+  display:grid;grid-template-columns:76px 104px minmax(0,1fr) 96px 72px;gap:14px;
+  padding:13px 20px 13px 17px;width:100%;text-align:left;
+  border-bottom:1px solid var(--line-soft);border-left:3px solid transparent;align-items:start;
+}
+.row:hover{background:var(--accent-wash)}
+.row.sev-high{border-left-color:var(--crit)}
+.row.sev-med{border-left-color:var(--warn)}
+.row.sev-low{border-left-color:var(--line)}
+.row[aria-current="true"]{background:var(--accent-wash);box-shadow:inset 2px 0 0 var(--accent)}
+.r-date{font-family:var(--f-mono);font-size:10.5px;color:var(--ink3);padding-top:2px}
+.r-date b{display:block;font-weight:500;color:var(--ink2);font-size:12px}
+.r-src{font-family:var(--f-mono);font-size:10px;letter-spacing:.03em;color:var(--ink2);padding-top:3px;line-height:1.35}
+.r-title{font-family:var(--f-disp);font-weight:600;font-size:14.5px;line-height:1.35;letter-spacing:-.005em;text-wrap:balance}
+.r-brief{color:var(--ink3);font-size:12.5px;line-height:1.45;margin-top:3px;max-width:66ch}
+.r-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.tag{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);border:1px solid var(--line);border-radius:2px;padding:1.5px 5px}
+.r-type{font-family:var(--f-mono);font-size:10.5px;color:var(--ink2);padding-top:3px;line-height:1.4}
+.r-sev{padding-top:2px}
+.sev{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;padding:2px 6px;border-radius:2px;display:inline-block}
+.sev.high{color:var(--crit);background:var(--crit-wash)}
+.sev.med{color:var(--warn);background:var(--warn-wash)}
+.sev.low{color:var(--ink3);background:var(--line-soft)}
+.empty{padding:64px 20px;text-align:center;color:var(--ink3);font-size:13px}
+
+/* dossier */
+.dos-top{padding:18px 22px 15px;border-bottom:1px solid var(--line)}
+.dos-eyebrow{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);display:flex;justify-content:space-between;gap:10px;margin-bottom:9px}
+.dos-title{font-family:var(--f-disp);font-weight:700;font-size:19px;line-height:1.25;letter-spacing:-.015em;text-wrap:balance}
+.dos-meta{margin:13px 0 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 14px;font-size:12.5px}
+.dos-meta dt{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding-top:2px}
+.dos-meta dd{margin:0;color:var(--ink2)}
+.dos-sec{padding:16px 22px;border-bottom:1px solid var(--line-soft)}
+.dos-h{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px}
+.dos-sec p{margin:0 0 9px;font-size:13px;line-height:1.62;color:var(--ink2)}
+.dos-sec p:last-child{margin-bottom:0}
+.deltas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.deltas li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:8px;font-size:12.5px;line-height:1.5;color:var(--ink2)}
+.deltas .mk{font-family:var(--f-mono);font-size:10.5px;color:var(--accent);padding-top:2px}
+.watch{border-left:2px solid var(--accent);padding:2px 0 2px 12px;font-size:13px;line-height:1.55;color:var(--ink)}
+.dos-acts{padding:16px 22px 40px;display:flex;flex-direction:column;gap:8px}
+.act{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:3px;padding:9px 12px;font-size:12.5px;color:var(--ink2);background:var(--raise);width:100%;text-align:left}
+.act:hover{border-color:var(--accent);color:var(--accent)}
+.act .k{font-family:var(--f-mono);font-size:10px;color:var(--ink3)}
+.dos-blank{padding:72px 26px;color:var(--ink3);font-size:13px;line-height:1.65;text-align:center}
+.dos-blank b{display:block;font-family:var(--f-mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;margin-bottom:10px}
+
+/* RUU tracker */
+.ruu{padding:4px 20px 40px}
+.ruu-item{padding:18px 0;border-bottom:1px solid var(--line-soft);display:grid;grid-template-columns:minmax(0,1fr) 176px;gap:24px;align-items:start}
+.ruu-name{font-family:var(--f-disp);font-weight:600;font-size:15.5px;letter-spacing:-.005em}
+.ruu-sub{font-family:var(--f-mono);font-size:10.5px;color:var(--ink3);margin-top:4px;letter-spacing:.03em}
+.stages{display:flex;gap:3px;margin-top:14px}
+.stage{flex:1;min-width:0}
+.stage .bar{height:5px;border-radius:1px;background:var(--line-soft)}
+.stage.done .bar{background:var(--accent)}
+.stage.now .bar{background:var(--accent);animation:breathe 3.4s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:1}50%{opacity:.4}}
+.stage .sl{font-family:var(--f-mono);font-size:9px;color:var(--ink3);margin-top:6px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stage.now .sl{color:var(--accent);font-weight:500}
+.ruu-side{display:flex;flex-direction:column;gap:7px;align-items:flex-end;text-align:right}
+.ruu-buzz{font-family:var(--f-mono);font-size:10px;color:var(--ink3);letter-spacing:.04em}
+.ruu-note{font-size:12.5px;color:var(--ink2);line-height:1.55;margin-top:12px;max-width:74ch}
+
+/* economic */
+.eco{display:grid;grid-template-columns:minmax(0,1fr) 336px;flex:1;min-height:0}
+.eco-main{min-width:0;border-right:1px solid var(--line);padding-bottom:40px}
+.eco-side{position:sticky;top:102px;align-self:start;height:calc(100vh - 102px);overflow-y:auto;background:var(--surface)}
+.eco-hero{padding:22px 24px 6px}
+.eco-kicker{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3)}
+.eco-title{font-family:var(--f-disp);font-weight:700;font-size:26px;letter-spacing:-.02em;margin:7px 0 0;line-height:1.15}
+.eco-figs{display:flex;align-items:flex-end;gap:28px;margin-top:16px;flex-wrap:wrap}
+.figbig{font-family:var(--f-mono);font-size:44px;font-weight:500;line-height:.95;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.figbig sup{font-size:15px;font-weight:400;color:var(--ink3);margin-left:4px;letter-spacing:0}
+.figside{display:flex;flex-direction:column;gap:3px}
+.figside .l{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+.figside .v{font-family:var(--f-mono);font-size:15px;font-variant-numeric:tabular-nums}
+.chart-ctl{display:flex;align-items:center;gap:16px;padding:14px 24px 10px;flex-wrap:wrap}
+.seg{display:flex;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.seg button{padding:5px 11px;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.04em;color:var(--ink3);border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:var(--accent-wash);color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-on)}
+.readout{font-family:var(--f-mono);font-size:11px;color:var(--ink2);margin-left:auto;border:1px solid var(--line);border-radius:3px;padding:4px 9px;background:var(--raise);white-space:nowrap}
+.chartwrap{padding:0 12px}
+.chartwrap svg{display:block;width:100%;height:auto}
+.eco-note{padding:16px 24px 0;font-size:12.5px;line-height:1.65;color:var(--ink3);max-width:80ch;border-top:1px solid var(--line-soft);margin-top:14px}
+.eco-note b{color:var(--ink2);font-weight:600}
+.eco-note .src{display:block;margin-top:8px;font-family:var(--f-mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase}
+
+.verdict{padding:20px 24px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto minmax(0,1fr);gap:26px;align-items:start}
+.vd-badge{display:flex;flex-direction:column;align-items:flex-start;gap:7px;flex:none}
+.vd-eyebrow{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3)}
+.vd-word{font-family:var(--f-disp);font-weight:700;font-size:22px;letter-spacing:-.01em;padding:3px 12px;border-radius:3px;white-space:nowrap}
+.vd-word.good{color:var(--good);background:var(--good-wash)}
+.vd-word.warn{color:var(--warn);background:var(--warn-wash)}
+.vd-word.crit{color:var(--crit);background:var(--crit-wash)}
+.vd-rank{font-family:var(--f-mono);font-size:10.5px;color:var(--ink3)}
+.vd-body{min-width:0}
+.vd-body p{margin:0 0 14px;font-size:13px;line-height:1.62;color:var(--ink2);max-width:78ch}
+.vd-grid{display:flex;flex-direction:column;gap:11px}
+.vd-row{display:grid;grid-template-columns:132px minmax(0,1fr) 46px;gap:12px;align-items:center}
+.vd-name{font-size:12px;color:var(--ink2);line-height:1.3}
+.vd-track{position:relative;height:16px}
+.vd-line{position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line)}
+.vd-dot{position:absolute;top:50%;width:6px;height:6px;border-radius:50%;background:var(--ink3);opacity:.55;transform:translate(-50%,-50%)}
+.vd-dot.id{width:10px;height:10px;background:var(--accent);opacity:1;box-shadow:0 0 0 3px var(--accent-wash)}
+.vd-dot-label{position:absolute;top:-15px;transform:translateX(-50%);font-family:var(--f-mono);font-size:9px;color:var(--ink3);white-space:nowrap}
+.vd-dot.id .vd-dot-label{color:var(--accent);font-weight:500}
+.vd-rankbadge{font-family:var(--f-mono);font-size:10.5px;text-align:right;font-variant-numeric:tabular-nums}
+.vd-foot{font-family:var(--f-mono);font-size:10px;letter-spacing:.03em;color:var(--ink3);margin-top:14px}
+
+.ind-h{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);padding:14px 18px 9px;border-bottom:1px solid var(--line);background:var(--surface);display:flex;justify-content:space-between}
+.ind{display:grid;grid-template-columns:minmax(0,1fr) 66px 70px;gap:8px;align-items:center;width:100%;text-align:left;padding:10px 18px;border-bottom:1px solid var(--line-soft);border-left:3px solid transparent}
+.ind:hover{background:var(--accent-wash)}
+.ind[aria-current="true"]{border-left-color:var(--accent);background:var(--accent-wash)}
+.ind-n{font-size:12.5px;line-height:1.3;color:var(--ink)}
+.ind-u{font-family:var(--f-mono);font-size:9.5px;color:var(--ink3);letter-spacing:.03em;margin-top:2px}
+.ind-v{font-family:var(--f-mono);font-size:13.5px;text-align:right;font-variant-numeric:tabular-nums}
+.ind-d{font-family:var(--f-mono);font-size:11px;text-align:right;font-variant-numeric:tabular-nums}
+.spark{display:block;width:100%;height:24px;grid-column:1/-1;margin-top:5px}
+.rilis-row{display:grid;grid-template-columns:66px minmax(0,1fr);gap:12px;padding:10px 18px;border-bottom:1px solid var(--line-soft);align-items:start}
+.rilis-d{font-family:var(--f-mono);font-size:10.5px;color:var(--ink3);padding-top:2px}
+.rilis-t{font-size:12.5px;line-height:1.4}
+.rilis-s{font-family:var(--f-mono);font-size:9.5px;color:var(--ink3);letter-spacing:.05em;margin-top:3px;text-transform:uppercase}
+.rilis-row.next{background:var(--accent-wash)}
+.rilis-row.next .rilis-d{color:var(--accent);font-weight:500}
+
+@media (prefers-reduced-motion:reduce){.pulse,.stage.now .bar{animation:none}}
+@media (max-width:1240px){
+  :root{--dossier:340px}
+  .row,.lg-head{grid-template-columns:70px 96px minmax(0,1fr) 72px}
+  .r-type,.h-type{display:none}
+}
+@media (max-width:960px){
+  .shell{grid-template-columns:1fr}
+  .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .split,.eco{grid-template-columns:1fr}
+  .stream,.eco-main{border-right:0;border-bottom:1px solid var(--line)}
+  .dossier,.eco-side{position:static;height:auto}
+  .lg-head,.subnav,.band{position:static}
+  .band{height:auto;padding:10px 16px;flex-wrap:wrap;gap:10px}
+  .mark{width:auto}
+  .band-mid{order:3;width:100%}
+  .row,.lg-head{grid-template-columns:62px minmax(0,1fr) 72px}
+  .r-src,.h-src{display:none}
+  .eco-title{font-size:22px}.figbig{font-size:36px}
+  .verdict{grid-template-columns:1fr;gap:14px}
+  .vd-badge{flex-direction:row;align-items:center;gap:10px}
+  .vd-row{grid-template-columns:104px minmax(0,1fr) 40px;gap:8px}
+}
+</style>
+
+<header class="band">
+  <div class="mark"><b>Arena</b><span>Public Affairs</span></div>
+  <div class="band-mid"><div class="tape" id="tape"></div></div>
+  <div class="band-right">
+    <span class="stamp">Data contoh</span>
+    <span class="sync"><span class="pulse"></span><span id="syncTxt">sinkron 06:12</span></span>
+    <button class="theme-btn" id="themeBtn" title="Ganti tema" aria-label="Ganti tema">◐</button>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="rail">
+    <button class="arena-btn" role="tab" aria-selected="true" data-arena="reg">
+      <span class="glyph">§</span><span class="lbl">Regulasi</span><span class="cnt" id="cntReg">—</span>
+    </button>
+    <button class="arena-btn" role="tab" aria-selected="false" data-arena="eco">
+      <span class="glyph">%</span><span class="lbl">Ekonomi</span><span class="cnt">27 thn</span>
+    </button>
+    <div id="railCtx"></div>
+  </nav>
+
+  <main class="work">
+    <div class="subnav" id="subnav"></div>
+    <div id="view"></div>
+  </main>
+</div>
+
+<script>
+"use strict";
+
+/* ─────────────────────────────────────────────────────────────
+   ARENA — mockup. Semua angka & dokumen di bawah ini adalah
+   DATA CONTOH untuk keperluan desain, bukan salinan resmi.
+   ───────────────────────────────────────────────────────────── */
+
+const TODAY = new Date(2026, 7, 19); // 19 Agu 2026
+const BULAN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+
+const LEMBAGA = {
+  ekon:  { s:"Kemenko Ekonomi", full:"Kementerian Koordinator Bidang Perekonomian", jdih:"jdih.ekon.go.id" },
+  pangan:{ s:"Kemenko Pangan",  full:"Kementerian Koordinator Bidang Pangan",       jdih:"jdih.kemenkopangan.go.id" },
+  perin: { s:"Kemenperin",      full:"Kementerian Perindustrian",                   jdih:"jdih.kemenperin.go.id" },
+  dag:   { s:"Kemendag",        full:"Kementerian Perdagangan",                     jdih:"jdih.kemendag.go.id" },
+  naker: { s:"Kemnaker",        full:"Kementerian Ketenagakerjaan",                 jdih:"jdih.kemnaker.go.id" },
+  esdm:  { s:"Kem. ESDM",       full:"Kementerian Energi dan Sumber Daya Mineral",  jdih:"jdih.esdm.go.id" },
+  bkpm:  { s:"Kem. Investasi",  full:"Kementerian Investasi/BKPM",                  jdih:"jdih.bkpm.go.id" },
+  tan:   { s:"Kementan",        full:"Kementerian Pertanian",                       jdih:"jdih.pertanian.go.id" },
+  kkp:   { s:"KKP",             full:"Kementerian Kelautan dan Perikanan",          jdih:"jdih.kkp.go.id" },
+  kes:   { s:"Kemenkes",        full:"Kementerian Kesehatan",                       jdih:"jdih.kemkes.go.id" },
+  setneg:{ s:"Setneg",          full:"Kementerian Sekretariat Negara",              jdih:"jdih.setneg.go.id" },
+  dpr:   { s:"DPR RI",          full:"Dewan Perwakilan Rakyat RI",                  jdih:"dpr.go.id" }
+};
+
+/* ── katalog regulasi (contoh) ───────────────────────────── */
+const REGS = [
+  { id:"r1", tgl:"2026-08-18", lem:"dag", jenis:"Permendag", no:"No. 41 Tahun 2026",
+    judul:"Kebijakan dan Pengaturan Impor Bahan Baku Plastik",
+    brief:"Memindahkan 62 pos tarif bahan baku plastik dari Lartas ke Post-Border, dengan syarat Pertimbangan Teknis Kemenperin.",
+    sektor:["Manufaktur","Petrokimia","Logistik"], dampak:"high", status:"Diundangkan",
+    ringkas:"Permendag 41/2026 menutup siklus revisi Permendag 8/2024 untuk kelompok bahan baku plastik. Pengawasan berpindah dari border ke post-border, sementara verifikasi teknis tetap ditahan di Kemenperin melalui Pertimbangan Teknis (Pertek).",
+    delta:[
+      "62 pos tarif HS 39.01–39.07 keluar dari daftar Lartas border.",
+      "Pertek Kemenperin tetap wajib, kini berlaku 12 bulan (sebelumnya 6 bulan).",
+      "Laporan realisasi impor via INSW paling lambat tanggal 15 tiap bulan.",
+      "Masa transisi 60 hari; PI lama tetap berlaku sampai habis kuota."
+    ],
+    watch:"Asosiasi hilir plastik menuntut relaksasi serupa untuk resin daur ulang. Peluang masuk lewat konsultasi publik revisi lampiran, kuartal IV.",
+    kontak:"Dit. Impor, Ditjen Perdagangan Luar Negeri" },
+
+  { id:"r2", tgl:"2026-08-17", lem:"setneg", jenis:"Perpres", no:"No. 76 Tahun 2026",
+    judul:"Percepatan Hilirisasi Mineral Kritis dan Rantai Pasok Baterai",
+    brief:"Membentuk satuan tugas lintas kementerian dan menetapkan target TKDN bertahap untuk sel baterai sampai 2030.",
+    sektor:["Pertambangan","Energi","Otomotif"], dampak:"high", status:"Berlaku",
+    ringkas:"Perpres ini menaikkan hilirisasi mineral kritis menjadi Proyek Strategis Nasional dan menempatkan koordinasinya langsung di bawah Kemenko Perekonomian, bukan lagi di kementerian teknis masing-masing.",
+    delta:[
+      "Satgas dipimpin Menko Perekonomian, sekretariat di Kementerian Investasi/BKPM.",
+      "Target TKDN sel baterai: 35% (2027), 50% (2029), 60% (2030).",
+      "Insentif tax holiday diperpanjang untuk investasi katoda dan prekursor.",
+      "Larangan ekspor bijih tembaga dipertegas, pengecualian kasus per kasus dicabut."
+    ],
+    watch:"Aturan turunan (Permen ESDM + Permenperin) dijadwalkan 90 hari. Jendela masukan industri paling realistis ada di penyusunan formula TKDN.",
+    kontak:"Deputi Bidang Koordinasi Investasi dan Pertambangan" },
+
+  { id:"r3", tgl:"2026-08-14", lem:"naker", jenis:"Permenaker", no:"No. 12 Tahun 2026",
+    judul:"Tata Cara Penetapan Upah Minimum dan Struktur Skala Upah",
+    brief:"Menyesuaikan formula upah minimum pasca putusan MK, memperkenalkan indeks daerah baru dan jadwal penetapan yang lebih awal.",
+    sektor:["Ketenagakerjaan","Manufaktur","Ritel"], dampak:"high", status:"Diundangkan",
+    ringkas:"Peraturan pelaksana pertama setelah putusan Mahkamah Konstitusi soal klaster ketenagakerjaan. Formula inflasi+pertumbuhan tetap, tetapi indeks tertentu (α) diganti indeks kebutuhan hidup layak daerah.",
+    delta:[
+      "Penetapan UMP maju ke 15 November, UMK ke 30 November.",
+      "Indeks α diganti Indeks KHL Daerah yang dihitung BPS provinsi.",
+      "Perusahaan >50 pekerja wajib melaporkan struktur skala upah ke SIAPkerja.",
+      "Sanksi administratif bertahap: teguran, pembekuan izin usaha."
+    ],
+    watch:"Dewan Pengupahan Daerah harus menyusun ulang rekomendasi dalam waktu singkat. Titik intervensi ada di sidang dewan provinsi, September–Oktober.",
+    kontak:"Ditjen Pembinaan Hubungan Industrial dan Jamsos" },
+
+  { id:"r4", tgl:"2026-08-12", lem:"esdm", jenis:"Permen ESDM", no:"No. 19 Tahun 2026",
+    judul:"Harga Patokan Batubara untuk Pemenuhan Kebutuhan Dalam Negeri",
+    brief:"Menetapkan mekanisme harga DMO baru dan badan layanan umum pengelola dana kompensasi.",
+    sektor:["Energi","Pertambangan","Kelistrikan"], dampak:"med", status:"Berlaku",
+    ringkas:"Mengganti skema DMO berbasis kewajiban volume menjadi skema dana kompensasi yang dikelola BLU, sehingga selisih harga pasar dan harga DMO tidak lagi ditanggung penuh produsen.",
+    delta:[
+      "Iuran BLU dipungut dari seluruh penjualan batubara, termasuk ekspor.",
+      "Harga DMO listrik tetap US$70/ton, DMO industri semen/pupuk US$90/ton.",
+      "Sanksi larangan ekspor diganti denda administratif berbasis iuran.",
+      "Berlaku efektif 1 Januari 2027 untuk kontrak baru."
+    ],
+    watch:"Besaran iuran belum final, akan diatur Kepmen tersendiri. Ini variabel yang paling menentukan beban biaya produsen.",
+    kontak:"Ditjen Mineral dan Batubara" },
+
+  { id:"r5", tgl:"2026-08-11", lem:"kes", jenis:"Permenkes", no:"No. 28 Tahun 2026",
+    judul:"Pengamanan Bahan yang Mengandung Zat Adiktif Berupa Produk Tembakau",
+    brief:"Aturan pelaksana PP 28/2024: kemasan polos bertahap, pembatasan titik penjualan, dan tata niaga produk tembakau alternatif.",
+    sektor:["Tembakau","Ritel","Kesehatan"], dampak:"high", status:"Uji publik",
+    ringkas:"Rancangan Permenkes yang menerjemahkan mandat PP 28/2024. Poin paling sensitif adalah kemasan polos berstandar dan larangan penjualan dalam radius tertentu dari satuan pendidikan.",
+    delta:[
+      "Kemasan polos dengan merek satu ukuran huruf, bertahap 24 bulan.",
+      "Larangan penjualan eceran dalam radius 200 meter dari sekolah.",
+      "Produk tembakau alternatif masuk rezim izin edar yang sama.",
+      "Kewajiban registrasi pelaku usaha ritel yang menjual produk tembakau."
+    ],
+    watch:"Masa uji publik ditutup 5 September 2026. Ini jendela formal terakhir sebelum harmonisasi Kemenkumham.",
+    kontak:"Ditjen Pencegahan dan Pengendalian Penyakit" },
+
+  { id:"r6", tgl:"2026-08-10", lem:"tan", jenis:"Permentan", no:"No. 14 Tahun 2026",
+    judul:"Alokasi dan Harga Eceran Tertinggi Pupuk Bersubsidi",
+    brief:"Memangkas rantai penebusan menjadi satu pintu di kios resmi dengan verifikasi biometrik petani.",
+    sektor:["Pertanian","Pupuk","Distribusi"], dampak:"med", status:"Berlaku",
+    ringkas:"Kelanjutan simplifikasi penyaluran pupuk bersubsidi. Penebusan cukup dengan KTP dan verifikasi wajah, tanpa kartu tani, dengan basis data tunggal e-RDKK.",
+    delta:[
+      "Kartu Tani tidak lagi wajib, diganti verifikasi NIK dan biometrik.",
+      "Alokasi nasional 9,55 juta ton, urea dan NPK saja.",
+      "HET urea Rp2.250/kg, NPK Rp2.300/kg, tidak berubah.",
+      "Kios wajib menutup transaksi hari itu juga di aplikasi Rekan."
+    ],
+    watch:"Isu implementasi ada di daerah dengan sinyal lemah. Usulan mode luring sedang dibahas di Ditjen PSP.",
+    kontak:"Ditjen Prasarana dan Sarana Pertanian" },
+
+  { id:"r7", tgl:"2026-08-07", lem:"setneg", jenis:"Keppres", no:"No. 21 Tahun 2026",
+    judul:"Tim Nasional Percepatan Swasembada Pangan",
+    brief:"Membentuk tim nasional lintas lembaga dengan mandat mengunci target produksi beras dan jagung sampai 2029.",
+    sektor:["Pangan","Pertanian","Logistik"], dampak:"med", status:"Berlaku",
+    ringkas:"Keppres pembentukan tim, bukan aturan substantif. Nilainya ada pada pemetaan siapa memegang kendali anggaran dan data produksi pangan tiga tahun ke depan.",
+    delta:[
+      "Ketua: Menko Pangan; wakil: Mentan, Menteri PU, Kepala Bapanas.",
+      "Bulog dan ID FOOD masuk sebagai anggota tetap, bukan pelaksana.",
+      "Laporan ke Presiden tiap triwulan.",
+      "Berlaku sampai 31 Desember 2029."
+    ],
+    watch:"Rapat perdana dijadwalkan awal September. Agenda pertama diperkirakan soal neraca komoditas beras 2027.",
+    kontak:"Sekretariat Kemenko Pangan" },
+
+  { id:"r8", tgl:"2026-08-05", lem:"bkpm", jenis:"Perka BKPM", no:"No. 6 Tahun 2026",
+    judul:"Pedoman Pemberian Fasilitas Berusaha di Kawasan Ekonomi Khusus",
+    brief:"Menyederhanakan pengajuan tax allowance dan menambahkan jalur khusus untuk investasi pusat data dan energi bersih.",
+    sektor:["Investasi","Digital","Energi"], dampak:"med", status:"Diundangkan",
+    ringkas:"Perubahan prosedural yang cukup berarti: permohonan fasilitas kini melekat pada perizinan berusaha di OSS, tanpa surat rekomendasi terpisah dari kementerian teknis.",
+    delta:[
+      "Rekomendasi teknis diganti pemenuhan kriteria otomatis di OSS.",
+      "Jalur khusus untuk pusat data ≥Rp5 triliun dan pembangkit EBT.",
+      "Waktu keputusan dipangkas dari 25 menjadi 10 hari kerja.",
+      "Evaluasi realisasi tetap tahunan melalui LKPM."
+    ],
+    watch:"Kriteria otomatis belum mencakup industri padat karya. Ini celah yang bisa diangkat asosiasi tekstil dan alas kaki.",
+    kontak:"Deputi Bidang Pelayanan Penanaman Modal" },
+
+  { id:"r9", tgl:"2026-08-04", lem:"kkp", jenis:"Permen KP", no:"No. 9 Tahun 2026",
+    judul:"Penangkapan Ikan Terukur Berbasis Kuota",
+    brief:"Menetapkan kuota per zona untuk 2027 dan membuka kuota nelayan lokal yang sebelumnya digabung kuota industri.",
+    sektor:["Perikanan","Pangan","Ekspor"], dampak:"med", status:"Berlaku",
+    ringkas:"Tahap lanjutan Penangkapan Ikan Terukur. Perubahan utama ada pada pemisahan kuota, yang mengubah struktur persaingan di zona 2 dan 3.",
+    delta:[
+      "Kuota industri, nelayan lokal, dan kegiatan bukan untuk usaha dipisah.",
+      "PNBP pascaproduksi berlaku penuh, tarif praproduksi dihapus.",
+      "Kewajiban pendaratan di pelabuhan pangkalan zona yang sama.",
+      "Pemantauan lewat VMS wajib untuk kapal di atas 30 GT."
+    ],
+    watch:"Alokasi kuota per zona akan diumumkan November. Ini titik lobi paling material bagi pelaku usaha perikanan tangkap.",
+    kontak:"Ditjen Perikanan Tangkap" },
+
+  { id:"r10", tgl:"2026-07-31", lem:"perin", jenis:"Permenperin", no:"No. 22 Tahun 2026",
+    judul:"Ketentuan dan Tata Cara Penghitungan Nilai TKDN Produk Elektronika",
+    brief:"Mengubah metode penghitungan TKDN dari berbasis biaya menjadi kombinasi biaya dan proses produksi.",
+    sektor:["Elektronika","Manufaktur","Pengadaan"], dampak:"high", status:"Diundangkan",
+    ringkas:"Perubahan metodologi TKDN yang berdampak langsung ke kelayakan produk dalam pengadaan pemerintah dan kewajiban TKDN ponsel 4G/5G.",
+    delta:[
+      "Bobot proses produksi 40%, biaya material 60%.",
+      "Skema pengembangan inovasi tidak lagi bisa berdiri sendiri.",
+      "Sertifikat TKDN lama berlaku sampai habis masa, maksimal 2 tahun.",
+      "Verifikasi oleh lembaga independen terakreditasi KAN."
+    ],
+    watch:"Pemegang sertifikat skema inovasi perlu memetakan ulang posisi sebelum masa berlaku habis. Sosialisasi teknis dijadwalkan September.",
+    kontak:"Pusat Peningkatan Penggunaan Produk Dalam Negeri" },
+
+  { id:"r11", tgl:"2026-07-29", lem:"ekon", jenis:"Permenko", no:"No. 5 Tahun 2026",
+    judul:"Pedoman Pelaksanaan Neraca Komoditas",
+    brief:"Menjadikan neraca komoditas sebagai dasar tunggal penerbitan persetujuan impor untuk sepuluh komoditas.",
+    sektor:["Perdagangan","Pangan","Manufaktur"], dampak:"high", status:"Berlaku",
+    ringkas:"Menutup ruang diskresi kementerian teknis dalam penerbitan persetujuan impor. Semua alokasi berasal dari neraca komoditas yang ditetapkan dalam rapat koordinasi terbatas.",
+    delta:[
+      "Sepuluh komoditas: beras, jagung, gula, daging, garam, dan lima lainnya.",
+      "Persetujuan impor terbit otomatis dari alokasi neraca komoditas.",
+      "Perubahan alokasi hanya lewat rakortas, maksimal dua kali setahun.",
+      "Data pelaku usaha wajib diperbarui setiap semester."
+    ],
+    watch:"Siklus pengusulan data pelaku usaha untuk neraca 2027 dibuka September. Terlambat berarti kehilangan alokasi satu tahun penuh.",
+    kontak:"Deputi Bidang Koordinasi Pangan dan Agribisnis" },
+
+  { id:"r12", tgl:"2026-07-24", lem:"pangan", jenis:"Permenko", no:"No. 3 Tahun 2026",
+    judul:"Tata Kelola Cadangan Pangan Pemerintah",
+    brief:"Mengatur ulang pembagian peran Bapanas, Bulog, dan BUMN pangan dalam pengadaan dan penyaluran cadangan.",
+    sektor:["Pangan","Logistik","BUMN"], dampak:"low", status:"Diundangkan",
+    ringkas:"Peraturan koordinatif yang merapikan tumpang tindih kewenangan. Dampak langsung ke pelaku usaha terbatas, tetapi menentukan siapa lawan bicara untuk urusan cadangan pangan.",
+    delta:[
+      "Bapanas sebagai penetap, Bulog sebagai pelaksana tunggal beras.",
+      "ID FOOD menangani daging, gula, dan minyak goreng.",
+      "Penyaluran bantuan pangan tidak lagi melalui skema penugasan terpisah.",
+      "Audit cadangan dua kali setahun oleh BPKP."
+    ],
+    watch:"Perubahan lawan bicara ini mempengaruhi seluruh proses pengadaan swasta yang selama ini masuk lewat penugasan.",
+    kontak:"Deputi Bidang Koordinasi Ketersediaan Pangan" },
+
+  { id:"r13", tgl:"2026-07-21", lem:"setneg", jenis:"Perpres", no:"No. 68 Tahun 2026",
+    judul:"Rencana Induk Transisi Energi Nasional 2026–2045",
+    brief:"Menetapkan lintasan pensiun dini PLTU batubara dan target bauran energi terbarukan per lima tahun.",
+    sektor:["Energi","Kelistrikan","Keuangan"], dampak:"high", status:"Berlaku",
+    ringkas:"Dokumen payung transisi energi. Menetapkan target yang mengikat kementerian dan BUMN, serta membuka mandat pembiayaan campuran untuk pensiun dini pembangkit.",
+    delta:[
+      "Bauran EBT 34% pada 2035, 60% pada 2045.",
+      "Daftar 12 PLTU prioritas pensiun dini, total 5,4 GW.",
+      "Mandat platform pembiayaan campuran dikelola PT SMI.",
+      "Kewajiban PLN membuka akses jaringan untuk pembangkit terbarukan swasta."
+    ],
+    watch:"Daftar PLTU prioritas belum dilampirkan, akan ditetapkan Kepmen ESDM. Ini titik ketidakpastian terbesar bagi pemegang PPA.",
+    kontak:"Ditjen EBTKE" },
+
+  { id:"r14", tgl:"2026-07-16", lem:"dag", jenis:"Permendag", no:"No. 38 Tahun 2026",
+    judul:"Perizinan Berusaha dan Tata Niaga Perdagangan Melalui Sistem Elektronik",
+    brief:"Menetapkan harga minimum barang impor lintas batas dan kewajiban pemisahan platform sosial dan niaga.",
+    sektor:["Digital","Ritel","UMKM"], dampak:"med", status:"Uji publik",
+    ringkas:"Rancangan revisi Permendag 31/2023. Substansi baru ada pada perlakuan platform hibrida dan mekanisme penurunan konten yang lebih cepat.",
+    delta:[
+      "Harga minimum impor lintas batas naik dari US$100 menjadi US$150.",
+      "Platform sosial-niaga wajib entitas dan sistem pembayaran terpisah.",
+      "Penurunan konten yang melanggar dalam 2x24 jam.",
+      "Kewajiban pelaporan penjual asing dengan omzet di atas ambang tertentu."
+    ],
+    watch:"Uji publik ditutup 29 Agustus 2026. Asosiasi UMKM dan platform sudah menyiapkan posisi yang berlawanan soal ambang harga.",
+    kontak:"Ditjen Perdagangan Dalam Negeri" }
+];
+
+/* ── RUU (contoh) ────────────────────────────────────────── */
+const TAHAP = ["Prolegnas","Naskah Akademik","Harmonisasi","Pembahasan Tk. I","Panja/Timus","Paripurna","Pengundangan"];
+const RUUS = [
+  { nama:"RUU Energi Baru dan Terbarukan", pengusul:"DPR (Komisi XII)", tahap:4, sejak:"2022",
+    catatan:"Simpul yang belum selesai adalah skema power wheeling. Pemerintah dan DPR belum satu suara soal apakah akses pihak ketiga ke jaringan PLN dibuka penuh atau terbatas kawasan industri.",
+    buzz:[4,6,5,9,14,11,8,12,19,26,22,31], mentions:31, target:"Target paripurna: Okt 2026" },
+  { nama:"RUU Perubahan atas UU Ketenagakerjaan", pengusul:"Pemerintah (Kemnaker)", tahap:3, sejak:"2025",
+    catatan:"Disusun sebagai tindak lanjut putusan MK. Draf pemerintah memisahkan klaster ketenagakerjaan dari UU Cipta Kerja, termasuk pengaturan ulang outsourcing dan pesangon.",
+    buzz:[9,12,8,15,22,28,24,33,29,41,38,47], mentions:47, target:"Pembahasan Tk. I: Sep 2026" },
+  { nama:"RUU Perkoperasian", pengusul:"DPR (Baleg)", tahap:5, sejak:"2024",
+    catatan:"Sudah masuk timus. Isu tersisa soal kewenangan pengawasan koperasi simpan pinjam, apakah tetap di kementerian atau berpindah ke OJK.",
+    buzz:[3,2,4,6,5,8,7,11,9,14,17,15], mentions:15, target:"Paripurna: Sep 2026" },
+  { nama:"RUU Keamanan dan Ketahanan Siber", pengusul:"DPR (Komisi I)", tahap:2, sejak:"2026",
+    catatan:"Kembali masuk Prolegnas Prioritas. Perdebatan berulang soal posisi BSSN dan kewajiban pelaporan insiden bagi penyelenggara infrastruktur kritis, termasuk sektor keuangan dan energi.",
+    buzz:[2,3,3,5,4,7,6,9,13,11,18,21], mentions:21, target:"Harmonisasi: Q4 2026" },
+  { nama:"RUU Minerba (Perubahan Kelima)", pengusul:"Pemerintah (ESDM)", tahap:3, sejak:"2026",
+    catatan:"Fokus pada perpanjangan izin, kewajiban hilirisasi, dan pemberian wilayah tambang untuk badan usaha ormas keagamaan serta koperasi.",
+    buzz:[6,9,7,12,18,15,23,20,27,24,33,29], mentions:29, target:"Pembahasan Tk. I: Okt 2026" },
+  { nama:"RUU Ekonomi Kreatif", pengusul:"DPR (Komisi VII)", tahap:6, sejak:"2023",
+    catatan:"Tinggal menunggu pengundangan. Substansi utama soal skema pembiayaan berbasis kekayaan intelektual sebagai jaminan.",
+    buzz:[5,4,6,4,7,5,9,6,8,7,12,9], mentions:9, target:"Pengundangan: Agu 2026" },
+  { nama:"RUU Perlindungan Pekerja Rumah Tangga", pengusul:"DPR (Baleg)", tahap:1, sejak:"2004",
+    catatan:"Sudah dua dekade keluar masuk Prolegnas. Kembali masuk daftar prioritas tetapi belum ada jadwal pembahasan yang mengikat.",
+    buzz:[2,1,3,2,4,3,2,5,4,3,6,8], mentions:8, target:"Belum terjadwal" }
+];
+
+/* ── indikator ekonomi (anchor tahunan, contoh) ──────────── */
+const IND = [
+  { id:"inflasi", nama:"Inflasi (y-on-y)", unit:"% y-on-y", freq:"Bulanan", vol:.35, dec:2, baik:"turun",
+    ket:"Indeks Harga Konsumen gabungan 90 kota. Lonjakan 2005, 2008, dan 2013 berimpit dengan penyesuaian harga BBM bersubsidi.",
+    a:{2000:3.7,2001:11.5,2002:11.9,2003:6.6,2004:6.2,2005:10.5,2006:13.1,2007:6.4,2008:9.8,2009:4.8,2010:5.1,2011:5.4,2012:4.3,2013:6.4,2014:6.4,2015:6.4,2016:3.5,2017:3.8,2018:3.2,2019:3.0,2020:2.0,2021:1.6,2022:4.2,2023:3.7,2024:2.3,2025:2.1,2026:2.6} },
+  { id:"pdb", nama:"Pertumbuhan PDB", unit:"% y-on-y", freq:"Triwulanan", vol:.18, dec:2, baik:"naik",
+    ket:"Produk Domestik Bruto atas dasar harga konstan. Kontraksi 2020 adalah satu-satunya sejak 1998.",
+    a:{2000:4.9,2001:3.6,2002:4.5,2003:4.8,2004:5.0,2005:5.7,2006:5.5,2007:6.3,2008:6.0,2009:4.6,2010:6.2,2011:6.2,2012:6.0,2013:5.6,2014:5.0,2015:4.9,2016:5.0,2017:5.1,2018:5.2,2019:5.0,2020:-2.1,2021:3.7,2022:5.3,2023:5.0,2024:5.0,2025:4.9,2026:5.1} },
+  { id:"tpt", nama:"Pengangguran terbuka", unit:"% angkatan kerja", freq:"Semesteran", vol:.12, dec:2, baik:"turun",
+    ket:"Tingkat Pengangguran Terbuka hasil Sakernas. Puncak 2005 belum terulang, tetapi 2020 memutus tren penurunan satu dekade.",
+    a:{2000:6.1,2001:8.1,2002:9.1,2003:9.5,2004:9.9,2005:11.2,2006:10.3,2007:9.1,2008:8.4,2009:7.9,2010:7.1,2011:6.6,2012:6.1,2013:6.2,2014:5.9,2015:6.2,2016:5.6,2017:5.5,2018:5.3,2019:5.2,2020:7.1,2021:6.5,2022:5.9,2023:5.3,2024:4.9,2025:4.8,2026:4.7} },
+  { id:"dagang", nama:"Neraca perdagangan", unit:"US$ miliar", freq:"Bulanan", vol:.9, dec:2, baik:"naik",
+    ket:"Surplus komoditas 2021–2022 adalah anomali harga, bukan perubahan struktur ekspor. Normalisasi berjalan sejak 2023.",
+    a:{2000:28.6,2001:22.7,2002:25.9,2003:28.5,2004:25.1,2005:27.9,2006:39.7,2007:39.6,2008:22.9,2009:19.7,2010:22.1,2011:26.1,2012:-1.7,2013:-4.1,2014:-2.2,2015:7.7,2016:9.5,2017:11.8,2018:-8.7,2019:-3.2,2020:21.7,2021:35.3,2022:54.5,2023:36.9,2024:31.0,2025:28.0,2026:24.5} },
+  { id:"ntp", nama:"Nilai Tukar Petani", unit:"indeks", freq:"Bulanan", vol:.7, dec:2, baik:"naik",
+    ket:"Rasio indeks harga yang diterima petani terhadap yang dibayar petani. Di atas 100 berarti daya tukar membaik.",
+    a:{2000:99.1,2001:98.6,2002:99.5,2003:100.2,2004:101.1,2005:100.4,2006:101.3,2007:102.1,2008:99.4,2009:99.8,2010:101.7,2011:105.8,2012:105.9,2013:104.9,2014:102.0,2015:101.6,2016:101.7,2017:103.1,2018:102.5,2019:103.2,2020:101.7,2021:104.8,2022:107.3,2023:114.0,2024:120.1,2025:121.4,2026:119.8} },
+  { id:"industri", nama:"Produksi industri besar", unit:"% y-on-y", freq:"Triwulanan", vol:.9, dec:2, baik:"naik",
+    ket:"Indeks produksi industri manufaktur besar dan sedang. Sensitif terhadap harga energi dan permintaan ekspor.",
+    a:{2000:6.0,2001:3.9,2002:4.0,2003:4.6,2004:5.9,2005:4.7,2006:4.6,2007:4.7,2008:3.7,2009:2.2,2010:4.7,2011:6.3,2012:5.7,2013:5.6,2014:4.6,2015:4.3,2016:4.3,2017:4.7,2018:4.3,2019:3.8,2020:-2.9,2021:3.4,2022:4.9,2023:4.6,2024:4.4,2025:4.3,2026:4.6} },
+  { id:"miskin", nama:"Tingkat kemiskinan", unit:"% penduduk", freq:"Semesteran", vol:.06, dec:2, baik:"turun",
+    ket:"Persentase penduduk di bawah garis kemiskinan. Penurunan melambat sejak 2023 meski garis kemiskinan naik lebih cepat dari inflasi umum.",
+    a:{2000:19.1,2001:18.4,2002:18.2,2003:17.4,2004:16.7,2005:16.0,2006:17.8,2007:16.6,2008:15.4,2009:14.2,2010:13.3,2011:12.5,2012:11.7,2013:11.4,2014:11.0,2015:11.2,2016:10.7,2017:10.1,2018:9.7,2019:9.2,2020:10.2,2021:9.7,2022:9.5,2023:9.4,2024:9.0,2025:8.6,2026:8.4} },
+  { id:"gini", nama:"Rasio Gini", unit:"indeks", freq:"Semesteran", vol:.004, dec:3, baik:"turun",
+    ket:"Ketimpangan pengeluaran. Naik tajam 2005–2013, lalu bergerak datar di kisaran 0,38 selama satu dekade terakhir.",
+    a:{2000:.308,2001:.320,2002:.329,2003:.320,2004:.320,2005:.363,2006:.357,2007:.376,2008:.350,2009:.370,2010:.378,2011:.410,2012:.410,2013:.413,2014:.406,2015:.402,2016:.394,2017:.391,2018:.384,2019:.380,2020:.385,2021:.381,2022:.384,2023:.388,2024:.379,2025:.377,2026:.375} }
+];
+
+const RILIS = [
+  { d:"01 Sep", t:"Inflasi Agustus 2026 dan Indeks Harga Konsumen", s:"Berita Resmi Statistik", next:true },
+  { d:"01 Sep", t:"Ekspor–impor Juli 2026", s:"Berita Resmi Statistik", next:true },
+  { d:"15 Sep", t:"Nilai Tukar Petani Agustus 2026", s:"Berita Resmi Statistik" },
+  { d:"01 Okt", t:"Inflasi September dan pariwisata Agustus", s:"Berita Resmi Statistik" },
+  { d:"05 Nov", t:"Pertumbuhan ekonomi triwulan III-2026", s:"Berita Resmi Statistik" },
+  { d:"05 Nov", t:"Keadaan ketenagakerjaan Agustus 2026", s:"Sakernas" },
+  { d:"15 Des", t:"Profil kemiskinan September 2026", s:"Susenas" }
+];
+
+/* ── posisi kawasan (ASEAN-6, contoh) ────────────────────── */
+const ASEAN = ["ID","MY","TH","VN","PH","SG"];
+const NEG_NAMA = { ID:"Indonesia", MY:"Malaysia", TH:"Thailand", VN:"Vietnam", PH:"Filipina", SG:"Singapura" };
+const REGIONAL = [
+  { id:"g_pdb", nama:"Pertumbuhan PDB", unit:"% y-on-y", dec:1, baik:"naik",
+    v:{ ID:5.1, MY:4.6, TH:2.8, VN:6.4, PH:5.8, SG:2.6 } },
+  { id:"g_inf", nama:"Inflasi", unit:"% y-on-y", dec:1, baik:"turun",
+    v:{ ID:2.6, MY:2.1, TH:0.9, VN:3.4, PH:3.8, SG:1.6 } },
+  { id:"g_tpt", nama:"Pengangguran", unit:"% angkatan kerja", dec:1, baik:"turun",
+    v:{ ID:4.7, MY:3.3, TH:1.0, VN:2.1, PH:3.9, SG:1.9 } },
+  { id:"g_fis", nama:"Keseimbangan fiskal", unit:"% PDB", dec:1, baik:"naik",
+    v:{ ID:-2.3, MY:-3.8, TH:-3.5, VN:-3.0, PH:-5.2, SG:0.4 } }
+];
+function regionalRank(g){
+  const order = ASEAN.slice().sort((a,b) => g.baik === "naik" ? g.v[b]-g.v[a] : g.v[a]-g.v[b]);
+  return order.indexOf("ID") + 1;
+}
+function regionalVerdict(){
+  const ranks = REGIONAL.map(regionalRank);
+  const avg = ranks.reduce((a,b) => a+b, 0) / ranks.length;
+  const tier = avg <= 2 ? "sangat" : avg <= 4 ? "baik" : "kurang";
+  const label = { sangat:"Sangat Baik", baik:"Baik", kurang:"Kurang Baik" }[tier];
+  const tone = { sangat:"good", baik:"good", kurang:"crit" }[tier];
+  return { avg, ranks, tier, label, tone };
+}
+
+/* ── deret waktu sintetis dari anchor tahunan ────────────── */
+function seed(n){ let x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }
+function buildSeries(ind){
+  const yrs = Object.keys(ind.a).map(Number).sort((a,b)=>a-b);
+  const out = [];
+  let k = 0;
+  for(let y = yrs[0]; y <= yrs[yrs.length-1]; y++){
+    const lastMonth = (y === 2026) ? 7 : 11;
+    for(let m = 0; m <= lastMonth; m++){
+      const cur = ind.a[y];
+      const nxt = ind.a[y+1] !== undefined ? ind.a[y+1] : cur;
+      const t = m / 12;
+      const base = cur + (nxt - cur) * t;
+      const wob = (seed(k*3.7 + y) - .5) * 2 * ind.vol + Math.sin(k/5.5) * ind.vol * .45;
+      out.push({ y, m, v: base + wob });
+      k++;
+    }
+  }
+  return out;
+}
+IND.forEach(i => { i.series = buildSeries(i); });
+
+const fmt = (v, d) => v.toLocaleString("id-ID", { minimumFractionDigits:d, maximumFractionDigits:d });
+const sgn = v => (v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v), Math.abs(v) < 1 ? 2 : 2);
+function tglID(iso){ const d = new Date(iso + "T00:00:00"); return d.getDate() + " " + BULAN[d.getMonth()] + " " + d.getFullYear(); }
+function tglShort(iso){ const d = new Date(iso + "T00:00:00"); return { d: String(d.getDate()).padStart(2,"0"), m: BULAN[d.getMonth()], y: d.getFullYear() }; }
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+/* ── state ───────────────────────────────────────────────── */
+const S = {
+  arena:"reg",
+  sub:"aliran",
+  lem:new Set(Object.keys(LEMBAGA).filter(k => k !== "dpr")),
+  dampak:new Set(["high","med","low"]),
+  q:"",
+  pilih:REGS[0].id,
+  ind:"inflasi",
+  rentang:"all"
+};
+
+const $ = s => document.querySelector(s);
+const view = $("#view"), subnav = $("#subnav"), railCtx = $("#railCtx");
+
+/* ── tape ────────────────────────────────────────────────── */
+function renderTape(){
+  const picks = ["inflasi","pdb","tpt","dagang","ntp"];
+  $("#tape").innerHTML = picks.map(id => {
+    const i = IND.find(x => x.id === id);
+    const s = i.series, last = s[s.length-1].v, prev = s[s.length-13].v;
+    const d = last - prev;
+    const good = i.baik === "naik" ? d > 0 : d < 0;
+    const cls = Math.abs(d) < .01 ? "flat" : good ? "up" : "down";
+    const arrow = Math.abs(d) < .01 ? "=" : d > 0 ? "▲" : "▼";
+    return '<div class="tape-item"><span class="tape-k">' + esc(i.nama.split(" (")[0]) + '</span>' +
+      '<span class="tape-v">' + fmt(last, i.dec) + '</span>' +
+      '<span class="tape-d ' + cls + '">' + arrow + " " + fmt(Math.abs(d), i.dec) + '</span></div>';
+  }).join("");
+}
+
+/* ── filter ──────────────────────────────────────────────── */
+function filtered(){
+  const q = S.q.trim().toLowerCase();
+  return REGS.filter(r => {
+    if(!S.lem.has(r.lem)) return false;
+    if(!S.dampak.has(r.dampak)) return false;
+    if(q){
+      const hay = (r.judul + " " + r.brief + " " + r.no + " " + r.jenis + " " + r.sektor.join(" ")).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+/* ── rail konteks ────────────────────────────────────────── */
+function renderRail(){
+  if(S.arena === "eco"){
+    railCtx.innerHTML =
+      '<div class="rail-sec"><div class="rail-h"><span>Cakupan</span></div>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink2);margin:0 0 12px">' +
+      'Seri nasional Januari 2000 sampai Agustus 2026, dibangun dari rilis bulanan dan triwulanan BPS.</p>' +
+      '<dl class="dos-meta" style="margin:0">' +
+      '<dt>Deret</dt><dd>' + IND.length + ' indikator</dd>' +
+      '<dt>Titik</dt><dd>' + IND[0].series.length + ' bulan</dd>' +
+      '<dt>Sumber</dt><dd>BPS, Berita Resmi Statistik</dd>' +
+      '<dt>Tarik</dt><dd>Otomatis, tiap rilis</dd></dl></div>' +
+      '<div class="rail-sec"><div class="rail-h"><span>Jadwal rilis</span></div>' +
+      RILIS.slice(0,4).map(r => '<div style="display:flex;gap:10px;padding:6px 0;font-size:12px;color:var(--ink2)">' +
+        '<span style="font-family:var(--f-mono);font-size:10.5px;color:' + (r.next ? "var(--accent)" : "var(--ink3)") + ';flex:none;width:44px">' + r.d + '</span>' +
+        '<span style="line-height:1.35">' + esc(r.t) + '</span></div>').join("") +
+      '</div>';
+    return;
+  }
+  const counts = {};
+  REGS.forEach(r => counts[r.lem] = (counts[r.lem] || 0) + 1);
+  const order = ["ekon","pangan","perin","dag","naker","esdm","bkpm","tan","kkp","kes","setneg"];
+  railCtx.innerHTML =
+    '<div class="rail-sec"><div class="rail-h"><span>Sumber</span><button data-all="lem">semua</button></div>' +
+    order.map(k => '<label class="chk"><input type="checkbox" data-lem="' + k + '"' + (S.lem.has(k) ? " checked" : "") + '>' +
+      '<span class="t">' + esc(LEMBAGA[k].s) + '</span><span class="n">' + (counts[k] || 0) + '</span></label>').join("") +
+    '</div>' +
+    '<div class="rail-sec"><div class="rail-h"><span>Bobot dampak</span></div>' +
+    [["high","Tinggi"],["med","Sedang"],["low","Rendah"]].map(([k,l]) =>
+      '<label class="chk"><input type="checkbox" data-dmp="' + k + '"' + (S.dampak.has(k) ? " checked" : "") + '>' +
+      '<span class="t">' + l + '</span><span class="n">' + REGS.filter(r => r.dampak === k).length + '</span></label>').join("") +
+    '</div>' +
+    '<div class="rail-sec"><div class="rail-h"><span>Kanal tarik</span></div>' +
+    '<div style="font-size:12px;line-height:1.65;color:var(--ink3)">' +
+    'JDIH sepuluh kementerian teknis, JDIH Setneg untuk Perpres dan Keppres, serta laman DPR dan pemberitaan yang memuat nama RUU.' +
+    '</div></div>';
+}
+
+/* ── subnav ──────────────────────────────────────────────── */
+function renderSubnav(){
+  if(S.arena === "eco"){
+    subnav.innerHTML = '<span style="font-family:var(--f-mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);padding:0 4px">Seri nasional BPS 2000–' + TODAY.getFullYear() + '</span>' +
+      '<span class="spacer"></span>' +
+      '<span style="font-family:var(--f-mono);font-size:10.5px;color:var(--ink3)">Rilis berikutnya · 1 Sep 2026</span>';
+    return;
+  }
+  subnav.innerHTML = SUBTABS.map(([k,l]) =>
+    '<button class="subtab" role="tab" data-sub="' + k + '" aria-selected="' + (S.sub === k) + '">' + l + '<span class="b" data-count="' + k + '">0</span></button>').join("") +
+    '<span class="spacer"></span>' +
+    '<div class="search"><span class="ic">/</span><input id="q" placeholder="Cari judul, nomor, sektor…" value="' + esc(S.q) + '"></div>';
+  syncCounts();
+}
+
+const SUBTABS = [["aliran","Aliran regulasi"],["ruu","Tracker RUU"],["puncak","Perpres &amp; Keppres"]];
+
+function syncCounts(){
+  const n = { aliran:filtered().length, ruu:RUUS.length, puncak:filteredPuncak().length };
+  document.querySelectorAll("[data-count]").forEach(el => { el.textContent = n[el.dataset.count]; });
+  const c = document.getElementById("cntReg");
+  if(c) c.textContent = filtered().length + "/" + REGS.length;
+}
+
+/* ── aliran regulasi ─────────────────────────────────────── */
+function rowHTML(r){
+  const t = tglShort(r.tgl);
+  const sevL = { high:"Tinggi", med:"Sedang", low:"Rendah" }[r.dampak];
+  return '<button class="row sev-' + (r.dampak === "high" ? "high" : r.dampak === "med" ? "med" : "low") + '" data-reg="' + r.id + '" aria-current="' + (S.pilih === r.id) + '">' +
+    '<span class="r-date"><b>' + t.d + " " + t.m + '</b>' + t.y + '</span>' +
+    '<span class="r-src">' + esc(LEMBAGA[r.lem].s) + '</span>' +
+    '<span><span class="r-title">' + esc(r.judul) + '</span>' +
+    '<span class="r-brief">' + esc(r.brief) + '</span>' +
+    '<span class="r-tags">' + r.sektor.map(s => '<span class="tag">' + esc(s) + '</span>').join("") + '</span></span>' +
+    '<span class="r-type">' + esc(r.jenis) + '<br>' + esc(r.no.replace("Tahun ","Thn ")) + '</span>' +
+    '<span class="r-sev"><span class="sev ' + r.dampak + '">' + sevL + '</span></span>' +
+    '</button>';
+}
+
+function dossierHTML(){
+  const r = REGS.find(x => x.id === S.pilih);
+  if(!r) return '<div class="dos-blank"><b>Tidak ada dokumen terpilih</b>Pilih satu baris di kiri untuk membuka ringkasan, daftar perubahan, dan catatan tindak lanjut.</div>';
+  const L = LEMBAGA[r.lem];
+  return '<div class="dos-top">' +
+    '<div class="dos-eyebrow"><span>' + esc(r.jenis) + '</span><span>' + esc(r.no) + '</span></div>' +
+    '<h2 class="dos-title">' + esc(r.judul) + '</h2>' +
+    '<dl class="dos-meta">' +
+    '<dt>Penerbit</dt><dd>' + esc(L.full) + '</dd>' +
+    '<dt>Tanggal</dt><dd>' + tglID(r.tgl) + '</dd>' +
+    '<dt>Status</dt><dd>' + esc(r.status) + '</dd>' +
+    '<dt>Unit</dt><dd>' + esc(r.kontak) + '</dd>' +
+    '<dt>Sektor</dt><dd>' + r.sektor.join(", ") + '</dd></dl></div>' +
+    '<div class="dos-sec"><div class="dos-h">Ringkasan</div><p>' + esc(r.ringkas) + '</p></div>' +
+    '<div class="dos-sec"><div class="dos-h">Yang berubah</div><ul class="deltas">' +
+    r.delta.map((d,i) => '<li><span class="mk">' + String(i+1).padStart(2,"0") + '</span><span>' + esc(d) + '</span></li>').join("") +
+    '</ul></div>' +
+    '<div class="dos-sec"><div class="dos-h">Catatan tindak lanjut</div><div class="watch">' + esc(r.watch) + '</div></div>' +
+    '<div class="dos-acts">' +
+    '<button class="act"><span>Buka dokumen di JDIH</span><span class="k">' + esc(L.jdih) + '</span></button>' +
+    '<button class="act"><span>Susun catatan posisi</span><span class="k">memo</span></button>' +
+    '<button class="act"><span>Pantau aturan turunan</span><span class="k">pantau</span></button>' +
+    '</div>';
+}
+
+function renderAliran(){
+  const f = filtered();
+  if(f.length && !f.some(r => r.id === S.pilih)) S.pilih = f[0].id;
+  view.innerHTML = '<div class="split"><div class="stream">' +
+    '<div class="lg-head"><span>Tanggal</span><span class="h-src">Sumber</span><span>Dokumen</span><span class="h-type">Jenis</span><span>Dampak</span></div>' +
+    (f.length ? f.map(rowHTML).join("") : '<div class="empty">Tidak ada dokumen yang cocok dengan penyaring saat ini.</div>') +
+    '</div><aside class="dossier">' + dossierHTML() + '</aside></div>';
+}
+
+/* ── perpres / keppres ───────────────────────────────────── */
+function filteredPuncak(){
+  const q = S.q.trim().toLowerCase();
+  return REGS.filter(r => r.lem === "setneg" && S.dampak.has(r.dampak) &&
+    (!q || (r.judul + " " + r.brief + " " + r.no + " " + r.jenis + " " + r.sektor.join(" ")).toLowerCase().includes(q)));
+}
+function renderPuncak(){
+  const f = filteredPuncak();
+  if(f.length && !f.some(r => r.id === S.pilih)) S.pilih = f[0].id;
+  view.innerHTML = '<div class="split"><div class="stream">' +
+    '<div style="padding:18px 20px 14px;border-bottom:1px solid var(--line)">' +
+    '<div class="eco-kicker">Salinan dari JDIH Sekretariat Negara</div>' +
+    '<p style="margin:8px 0 0;font-size:13px;line-height:1.6;color:var(--ink2);max-width:70ch">' +
+    'Perpres dan Keppres yang terbit dalam 60 hari terakhir. Sebagian besar tidak berdampak langsung, tetapi menentukan siapa yang memegang koordinasi dan anggaran untuk agenda di bawahnya.</p></div>' +
+    '<div class="lg-head"><span>Tanggal</span><span class="h-src">Sumber</span><span>Dokumen</span><span class="h-type">Jenis</span><span>Dampak</span></div>' +
+    (f.length ? f.map(rowHTML).join("") : '<div class="empty">Tidak ada Perpres atau Keppres yang cocok dengan penyaring saat ini.</div>') +
+    '</div><aside class="dossier">' + dossierHTML() + '</aside></div>';
+}
+
+/* ── tracker RUU ─────────────────────────────────────────── */
+function buzzSVG(vals){
+  const w = 100, h = 22, mx = Math.max(...vals), mn = Math.min(...vals);
+  const pts = vals.map((v,i) => [i/(vals.length-1)*w, h - 2 - (v-mn)/((mx-mn)||1)*(h-5)]);
+  const d = pts.map((p,i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const area = d + " L" + w + " " + h + " L0 " + h + " Z";
+  return '<svg viewBox="0 0 ' + w + ' ' + h + '" width="120" height="26" aria-hidden="true">' +
+    '<path d="' + area + '" fill="var(--accent-wash)"/>' +
+    '<path d="' + d + '" fill="none" stroke="var(--accent)" stroke-width="1.4" stroke-linejoin="round"/>' +
+    '<circle cx="' + pts[pts.length-1][0].toFixed(1) + '" cy="' + pts[pts.length-1][1].toFixed(1) + '" r="2" fill="var(--accent)"/></svg>';
+}
+function renderRUU(){
+  view.innerHTML = '<div class="ruu">' +
+    '<div style="padding:18px 0 16px;border-bottom:1px solid var(--line)">' +
+    '<div class="eco-kicker">Ditarik dari laman DPR dan pemberitaan bernama RUU</div>' +
+    '<p style="margin:8px 0 0;font-size:13px;line-height:1.6;color:var(--ink2);max-width:74ch">' +
+    'Tahap resmi diambil dari laman DPR. Kolom kanan menghitung penyebutan nama RUU di pemberitaan dua belas bulan terakhir, sebagai perkiraan kasar tekanan publik, bukan ukuran kemajuan pembahasan.</p></div>' +
+    RUUS.map(r => {
+      const pct = Math.round(r.tahap / TAHAP.length * 100);
+      return '<div class="ruu-item"><div>' +
+        '<div class="ruu-name">' + esc(r.nama) + '</div>' +
+        '<div class="ruu-sub">' + esc(r.pengusul) + ' · masuk Prolegnas ' + r.sejak + ' · ' + pct + '% tahapan</div>' +
+        '<div class="stages">' + TAHAP.map((t,i) => {
+          const cls = i < r.tahap - 1 ? "done" : i === r.tahap - 1 ? "now" : "";
+          return '<div class="stage ' + cls + '"><div class="bar"></div><span class="sl">' + esc(t) + '</span></div>';
+        }).join("") + '</div>' +
+        '<p class="ruu-note">' + esc(r.catatan) + '</p></div>' +
+        '<div class="ruu-side">' + buzzSVG(r.buzz) +
+        '<span class="ruu-buzz">' + r.mentions + ' sebutan / bln</span>' +
+        '<span class="ruu-buzz" style="color:var(--ink2)">' + esc(r.target) + '</span></div></div>';
+    }).join("") + '</div>';
+}
+
+/* ── ekonomi ─────────────────────────────────────────────── */
+function sparkSVG(ind){
+  const s = ind.series.slice(-60);
+  const vs = s.map(p => p.v), mx = Math.max(...vs), mn = Math.min(...vs);
+  const w = 200, h = 24;
+  const pts = vs.map((v,i) => [i/(vs.length-1)*w, h - 2 - (v-mn)/((mx-mn)||1)*(h-5)]);
+  const d = pts.map((p,i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  return '<svg class="spark" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true">' +
+    '<path d="' + d + ' L' + w + ' ' + h + ' L0 ' + h + ' Z" fill="var(--accent-wash)"/>' +
+    '<path d="' + d + '" fill="none" stroke="var(--accent)" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>';
+}
+
+function chartSVG(ind){
+  const spans = { all:1e4, "10t":120, "5t":60, "3t":36 };
+  const s = ind.series.slice(-Math.min(spans[S.rentang], ind.series.length));
+  const W = 1000, H = 300, PL = 8, PR = 54, PT = 18, PB = 26;
+  const vs = s.map(p => p.v);
+  let mx = Math.max(...vs), mn = Math.min(...vs);
+  const pad = (mx - mn) * .14 || 1; mx += pad; mn -= pad;
+  if(mn < 0 && mn > -pad) mn = Math.min(mn, -pad);
+  const X = i => PL + i/(s.length-1)*(W-PL-PR);
+  const Y = v => PT + (mx-v)/(mx-mn)*(H-PT-PB);
+
+  const ticks = 4, gy = [];
+  for(let i = 0; i <= ticks; i++){
+    const v = mn + (mx-mn)*i/ticks;
+    gy.push('<line x1="' + PL + '" x2="' + (W-PR) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '" stroke="var(--line-soft)" stroke-width="1"/>' +
+      '<text x="' + (W-PR+8) + '" y="' + (Y(v)+3.5).toFixed(1) + '" fill="var(--ink3)" font-family="IBM Plex Mono, monospace" font-size="11">' + fmt(v, ind.dec) + '</text>');
+  }
+  const zero = (mn < 0 && mx > 0)
+    ? '<line x1="' + PL + '" x2="' + (W-PR) + '" y1="' + Y(0).toFixed(1) + '" y2="' + Y(0).toFixed(1) + '" stroke="var(--ink3)" stroke-width="1" stroke-dasharray="3 3"/>' : "";
+
+  const yrsSpan = s[s.length-1].y - s[0].y;
+  const step = yrsSpan > 20 ? 4 : yrsSpan > 10 ? 2 : 1;
+  let gx = "";
+  s.forEach((p,i) => {
+    if(p.m === 0 && (p.y % step === 0)){
+      gx += '<line x1="' + X(i).toFixed(1) + '" x2="' + X(i).toFixed(1) + '" y1="' + PT + '" y2="' + (H-PB) + '" stroke="var(--line-soft)" stroke-width="1"/>' +
+        '<text x="' + X(i).toFixed(1) + '" y="' + (H-8) + '" fill="var(--ink3)" font-family="IBM Plex Mono, monospace" font-size="11" text-anchor="middle">' + (yrsSpan > 12 ? "’" + String(p.y).slice(2) : p.y) + '</text>';
+    }
+  });
+
+  const eras = [[2008,4,2009,5,"Krisis global"],[2020,2,2021,2,"Pandemi"]];
+  let band = "";
+  eras.forEach(([y1,m1,y2,m2,lbl]) => {
+    const i1 = s.findIndex(p => p.y === y1 && p.m === m1);
+    const i2 = s.findIndex(p => p.y === y2 && p.m === m2);
+    if(i1 < 0 || i2 < 0) return;
+    band += '<rect x="' + X(i1).toFixed(1) + '" y="' + PT + '" width="' + (X(i2)-X(i1)).toFixed(1) + '" height="' + (H-PT-PB) + '" fill="var(--ink3)" opacity=".085"/>' +
+      '<text x="' + (X(i1)+5).toFixed(1) + '" y="' + (PT+13) + '" fill="var(--ink3)" font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing=".5">' + lbl + '</text>';
+  });
+
+  const d = s.map((p,i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(p.v).toFixed(1)).join(" ");
+  const baseY = (mn < 0 && mx > 0) ? Y(0) : (H-PB);
+  const area = d + " L" + X(s.length-1).toFixed(1) + " " + baseY.toFixed(1) + " L" + X(0).toFixed(1) + " " + baseY.toFixed(1) + " Z";
+  const last = s[s.length-1];
+
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" id="chart" role="img" aria-label="Grafik ' + esc(ind.nama) + '">' +
+    band + gy.join("") + gx + zero +
+    '<path d="' + area + '" fill="var(--accent-wash)"/>' +
+    '<path d="' + d + '" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<circle cx="' + X(s.length-1).toFixed(1) + '" cy="' + Y(last.v).toFixed(1) + '" r="3.6" fill="var(--accent)"/>' +
+    '<circle cx="' + X(s.length-1).toFixed(1) + '" cy="' + Y(last.v).toFixed(1) + '" r="7" fill="none" stroke="var(--accent)" stroke-width="1" opacity=".4"/>' +
+    '<line id="cross" x1="0" x2="0" y1="' + PT + '" y2="' + (H-PB) + '" stroke="var(--ink3)" stroke-width="1" opacity="0"/>' +
+    '<rect id="hit" x="' + PL + '" y="' + PT + '" width="' + (W-PL-PR) + '" height="' + (H-PT-PB) + '" fill="transparent"/></svg>';
+}
+
+function vdTrack(g, rank){
+  const vals = ASEAN.map(k => g.v[k]);
+  const mn = Math.min(...vals), mx = Math.max(...vals);
+  const pos = v => ((v - mn) / ((mx - mn) || 1)) * 100;
+  const dots = ASEAN.slice().sort((a,b) => pos(g.v[a]) - pos(g.v[b])).map(k => {
+    const isID = k === "ID";
+    return '<div class="vd-dot' + (isID ? " id" : "") + '" style="left:' + pos(g.v[k]).toFixed(1) + '%" title="' + esc(NEG_NAMA[k]) + " " + fmt(g.v[k], g.dec) + '">' +
+      (isID ? '<span class="vd-dot-label">' + fmt(g.v[k], g.dec) + '</span>' : "") + '</div>';
+  }).join("");
+  return '<div class="vd-row"><span class="vd-name">' + esc(g.nama) + '</span>' +
+    '<div class="vd-track"><div class="vd-line"></div>' + dots + '</div>' +
+    '<span class="vd-rankbadge">' + rank + '/6</span></div>';
+}
+
+function renderVerdictPanel(){
+  const vd = regionalVerdict();
+  const rows = REGIONAL.map((g,i) => vdTrack(g, vd.ranks[i])).join("");
+  const kuat = REGIONAL.filter((g,i) => vd.ranks[i] <= 2).map(g => g.nama.toLowerCase());
+  const lemah = REGIONAL.filter((g,i) => vd.ranks[i] >= 5).map(g => g.nama.toLowerCase());
+  const narasi = "Dibandingkan lima ekonomi ASEAN terbesar lainnya, posisi Indonesia rata-rata peringkat " +
+    fmt(vd.avg, 1) + " dari 6 negara pada empat indikator inti." +
+    (kuat.length ? " Unggul pada " + kuat.join(" dan ") + "." : "") +
+    (lemah.length ? " Tertinggal pada " + lemah.join(" dan ") + ", dengan Vietnam dan Filipina tumbuh lebih cepat serta Thailand dan Singapura menekan pengangguran jauh lebih rendah." : "");
+  return '<div class="verdict">' +
+    '<div class="vd-badge"><span class="vd-eyebrow">Posisi kawasan</span>' +
+    '<span class="vd-word ' + vd.tone + '">' + esc(vd.label) + '</span>' +
+    '<span class="vd-rank">peringkat rata-rata ' + fmt(vd.avg, 1) + '/6</span></div>' +
+    '<div class="vd-body"><p>' + narasi + '</p>' +
+    '<div class="vd-grid">' + rows + '</div>' +
+    '<div class="vd-foot">Dibandingkan: ' + ASEAN.map(k => esc(NEG_NAMA[k])).join(" · ") + ' · titik ungu = Indonesia · data contoh, bukan rilis resmi</div>' +
+    '</div></div>';
+}
+
+function renderEco(){
+  const ind = IND.find(i => i.id === S.ind);
+  const s = ind.series, last = s[s.length-1], prev = s[s.length-13].v;
+  const d = last.v - prev;
+  const good = ind.baik === "naik" ? d > 0 : d < 0;
+  const all = s.map(p => p.v);
+  const hi = Math.max(...all), lo = Math.min(...all);
+  const hiP = s[all.indexOf(hi)], loP = s[all.indexOf(lo)];
+
+  view.innerHTML = '<div class="eco"><div class="eco-main">' +
+    renderVerdictPanel() +
+    '<div class="eco-hero">' +
+    '<div class="eco-kicker">' + esc(ind.freq) + ' · ' + esc(ind.unit) + ' · nasional</div>' +
+    '<h1 class="eco-title">' + esc(ind.nama) + '</h1>' +
+    '<div class="eco-figs">' +
+    '<div class="figbig">' + fmt(last.v, ind.dec) + '<sup>' + BULAN[last.m] + " " + last.y + '</sup></div>' +
+    '<div class="figside"><span class="l">Setahun lalu</span><span class="v">' + fmt(prev, ind.dec) + '</span></div>' +
+    '<div class="figside"><span class="l">Selisih</span><span class="v ' + (Math.abs(d) < .005 ? "flat" : good ? "up" : "down") + '">' + sgn(d) + '</span></div>' +
+    '<div class="figside"><span class="l">Tertinggi</span><span class="v">' + fmt(hi, ind.dec) + ' <span style="color:var(--ink3);font-size:11px">' + BULAN[hiP.m] + " ’" + String(hiP.y).slice(2) + '</span></span></div>' +
+    '<div class="figside"><span class="l">Terendah</span><span class="v">' + fmt(lo, ind.dec) + ' <span style="color:var(--ink3);font-size:11px">' + BULAN[loP.m] + " ’" + String(loP.y).slice(2) + '</span></span></div>' +
+    '</div></div>' +
+    '<div class="chart-ctl"><div class="seg">' +
+    [["all","2000–kini"],["10t","10 thn"],["5t","5 thn"],["3t","3 thn"]].map(([k,l]) =>
+      '<button data-rentang="' + k + '" aria-pressed="' + (S.rentang === k) + '">' + l + '</button>').join("") +
+    '</div><div class="readout" id="readout">Arahkan kursor ke grafik</div></div>' +
+    '<div class="chartwrap">' + chartSVG(ind) + '</div>' +
+    '<div class="eco-note"><b>Baca cepat.</b> ' + esc(ind.ket) +
+    '<span class="src">Sumber: Badan Pusat Statistik · seri disusun ulang dari rilis bulanan dan triwulanan · angka pada mockup ini adalah data contoh</span></div>' +
+    '</div><aside class="eco-side">' +
+    '<div class="ind-h"><span>Indikator</span><span>60 bln terakhir</span></div>' +
+    IND.map(i => {
+      const si = i.series, lv = si[si.length-1].v, pv = si[si.length-13].v, dd = lv - pv;
+      const g = i.baik === "naik" ? dd > 0 : dd < 0;
+      return '<button class="ind" data-ind="' + i.id + '" aria-current="' + (S.ind === i.id) + '">' +
+        '<span><span class="ind-n">' + esc(i.nama) + '</span><span class="ind-u">' + esc(i.unit) + '</span></span>' +
+        '<span class="ind-v">' + fmt(lv, i.dec) + '</span>' +
+        '<span class="ind-d ' + (Math.abs(dd) < .005 ? "flat" : g ? "up" : "down") + '">' + sgn(dd) + '</span>' +
+        sparkSVG(i) + '</button>';
+    }).join("") +
+    '<div class="ind-h" style="border-top:1px solid var(--line)"><span>Kalender rilis</span><span>BPS</span></div>' +
+    RILIS.map(r => '<div class="rilis-row' + (r.next ? " next" : "") + '">' +
+      '<span class="rilis-d">' + r.d + '</span>' +
+      '<span><span class="rilis-t">' + esc(r.t) + '</span><span class="rilis-s">' + esc(r.s) + '</span></span></div>').join("") +
+    '</aside></div>';
+
+  wireChart(ind);
+}
+
+function wireChart(ind){
+  const svg = document.getElementById("chart");
+  if(!svg) return;
+  const spans = { all:1e4, "10t":120, "5t":60, "3t":36 };
+  const s = ind.series.slice(-Math.min(spans[S.rentang], ind.series.length));
+  const W = 1000, PL = 8, PR = 54;
+  const cross = document.getElementById("cross");
+  const out = document.getElementById("readout");
+  const move = e => {
+    const r = svg.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width * W;
+    let i = Math.round((x - PL) / (W - PL - PR) * (s.length - 1));
+    i = Math.max(0, Math.min(s.length - 1, i));
+    const px = PL + i/(s.length-1)*(W-PL-PR);
+    cross.setAttribute("x1", px); cross.setAttribute("x2", px); cross.setAttribute("opacity", ".45");
+    out.textContent = BULAN[s[i].m] + " " + s[i].y + "  ·  " + fmt(s[i].v, ind.dec) + " " + ind.unit.replace(" y-on-y","");
+  };
+  svg.addEventListener("mousemove", move);
+  svg.addEventListener("mouseleave", () => { cross.setAttribute("opacity","0"); out.textContent = "Arahkan kursor ke grafik"; });
+}
+
+/* ── render ──────────────────────────────────────────────── */
+function renderBody(){
+  if(S.arena === "eco") renderEco();
+  else if(S.sub === "ruu") renderRUU();
+  else if(S.sub === "puncak") renderPuncak();
+  else renderAliran();
+}
+function render(){
+  document.querySelectorAll(".arena-btn").forEach(b => b.setAttribute("aria-selected", b.dataset.arena === S.arena));
+  renderRail(); renderSubnav(); renderBody(); syncCounts();
+}
+
+/* ── events ──────────────────────────────────────────────── */
+document.addEventListener("click", e => {
+  const arena = e.target.closest("[data-arena]");
+  if(arena){ S.arena = arena.dataset.arena; render(); return; }
+  const sub = e.target.closest("[data-sub]");
+  if(sub){ S.sub = sub.dataset.sub; render(); return; }
+  const reg = e.target.closest("[data-reg]");
+  if(reg){ S.pilih = reg.dataset.reg; render(); return; }
+  const ind = e.target.closest("[data-ind]");
+  if(ind){ S.ind = ind.dataset.ind; renderEco(); document.querySelectorAll("[data-ind]").forEach(b => b.setAttribute("aria-current", b.dataset.ind === S.ind)); return; }
+  const rt = e.target.closest("[data-rentang]");
+  if(rt){ S.rentang = rt.dataset.rentang; renderEco(); return; }
+  const all = e.target.closest("[data-all]");
+  if(all){
+    const keys = Object.keys(LEMBAGA).filter(k => k !== "dpr");
+    if(S.lem.size === keys.length) S.lem = new Set(); else S.lem = new Set(keys);
+    render(); return;
+  }
+  if(e.target.id === "themeBtn"){
+    const cur = document.documentElement.getAttribute("data-theme");
+    const sysDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const nowDark = cur ? cur === "dark" : sysDark;
+    document.documentElement.setAttribute("data-theme", nowDark ? "light" : "dark");
+  }
+});
+
+document.addEventListener("change", e => {
+  if(e.target.dataset.lem){
+    e.target.checked ? S.lem.add(e.target.dataset.lem) : S.lem.delete(e.target.dataset.lem);
+    renderBody(); syncCounts();
+  }
+  if(e.target.dataset.dmp){
+    e.target.checked ? S.dampak.add(e.target.dataset.dmp) : S.dampak.delete(e.target.dataset.dmp);
+    renderBody(); syncCounts();
+  }
+});
+
+document.addEventListener("input", e => {
+  if(e.target.id === "q"){
+    S.q = e.target.value;
+    renderBody();
+    syncCounts();
+  }
+});
+
+document.addEventListener("keydown", e => {
+  if(e.key === "/" && document.activeElement.tagName !== "INPUT"){
+    const q = document.getElementById("q");
+    if(q){ e.preventDefault(); q.focus(); }
+  }
+});
+
+renderTape();
+render();
+</script>

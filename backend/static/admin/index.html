@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arena · Admin</title>
+<style>
+:root{
+  --paper:#121220; --surface:#191927; --raise:#1F1F30;
+  --ink:#EAE9F4; --ink2:#B3B1C8; --ink3:#7E7C95;
+  --line:#2E2E44; --line-soft:#252537;
+  --accent:#9F92F0; --accent-on:#15152A; --accent-wash:rgba(159,146,240,.14);
+  --crit:#E8756A; --warn:#DFAE4C; --good:#4FBF95;
+  --crit-wash:rgba(232,117,106,.13); --warn-wash:rgba(223,174,76,.13); --good-wash:rgba(79,191,149,.13);
+  --f-disp:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--raise);border:1px solid var(--line);border-radius:3px;padding:7px 10px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+.band{display:flex;align-items:center;gap:14px;padding:0 20px;height:54px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:40}
+.band b{font-family:var(--f-disp);font-weight:700;font-size:18px;letter-spacing:.16em;text-transform:uppercase}
+.band .sub{font-family:var(--f-mono);font-size:9.5px;color:var(--ink3);letter-spacing:.09em;text-transform:uppercase}
+.band .spacer{flex:1}
+.band .sync{font-family:var(--f-mono);font-size:10.5px;color:var(--ink3)}
+#logout{font-size:12px;color:var(--ink3);border:1px solid var(--line);padding:5px 10px;border-radius:3px}
+#logout:hover{color:var(--crit);border-color:var(--crit)}
+
+.tabs{display:flex;gap:4px;padding:10px 20px;border-bottom:1px solid var(--line);background:var(--surface);position:sticky;top:54px;z-index:30;overflow-x:auto}
+.tab{padding:7px 14px;font-size:13px;color:var(--ink3);border-radius:3px;white-space:nowrap}
+.tab:hover{color:var(--ink);background:var(--accent-wash)}
+.tab[aria-selected="true"]{color:var(--ink);font-weight:600;background:var(--accent-wash);box-shadow:inset 0 0 0 1px var(--line)}
+.tab .b{font-family:var(--f-mono);font-size:10px;color:var(--ink3)}
+
+.view{padding:20px;max-width:1100px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;margin-bottom:14px;overflow:hidden}
+.card-h{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line-soft);font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.card-h .spacer{flex:1}
+.card-b{padding:14px 16px}
+
+.reg{border-bottom:1px solid var(--line-soft);padding:14px 16px}
+.reg:last-child{border-bottom:0}
+.reg .meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.reg .src{font-family:var(--f-mono);font-size:10px;color:var(--ink2)}
+.reg .nomor{font-family:var(--f-mono);font-size:10.5px;color:var(--accent)}
+.reg .tgl{font-family:var(--f-mono);font-size:10.5px;color:var(--ink3)}
+.reg h3{margin:0 0 4px;font-family:var(--f-disp);font-weight:600;font-size:15px;line-height:1.35}
+.reg .sum{color:var(--ink2);font-size:13px;line-height:1.55;max-width:80ch}
+.reg .acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.reg .err{color:var(--crit);font-size:12px;margin-top:8px;font-family:var(--f-mono)}
+.empty{padding:36px;text-align:center;color:var(--ink3);font-size:13px}
+
+.btn{padding:7px 14px;border-radius:3px;font-size:12.5px;font-weight:600;border:1px solid var(--line)}
+.btn-good{background:var(--good-wash);color:var(--good);border-color:transparent}
+.btn-good:hover{background:var(--good)}
+.btn-good:hover{color:var(--accent-on)}
+.btn-skip{color:var(--ink2)}
+.btn-skip:hover{border-color:var(--warn);color:var(--warn)}
+.btn-danger{color:var(--crit)}
+.btn-danger:hover{border-color:var(--crit)}
+.btn-primary{background:var(--accent);color:var(--accent-on);border-color:transparent}
+.btn-primary:hover{opacity:.9}
+.btn-ghost{color:var(--ink2)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+.badge{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:2px}
+.badge.substantif{color:var(--good);background:var(--good-wash)}
+.badge.internal{color:var(--ink3);background:var(--line-soft)}
+.badge.ragu{color:var(--warn);background:var(--warn-wash)}
+.badge.high{color:var(--crit);background:var(--crit-wash)}
+.badge.med{color:var(--warn);background:var(--warn-wash)}
+.badge.low{color:var(--ink3);background:var(--line-soft)}
+.badge.status{color:var(--accent);background:var(--accent-wash)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:720px){.grid2{grid-template-columns:1fr}}
+.field{margin-bottom:12px}
+.field label{display:block;font-family:var(--f-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:5px}
+.field input,.field textarea,.field select{width:100%}
+.hint{font-size:11.5px;color:var(--ink3);margin-top:4px}
+
+.delta li{color:var(--ink2);font-size:13px;line-height:1.6;margin-bottom:6px}
+.sec{border-top:1px solid var(--line-soft);padding:12px 16px}
+.sec-h{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--raise);border:1px solid var(--line);border-radius:6px;padding:12px 16px;font-size:13px;z-index:100;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.toast.ok{border-color:var(--good)} .toast.err{border-color:var(--crit)}
+.sources-table{width:100%;border-collapse:collapse;font-size:13px}
+.sources-table th{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);text-align:left;padding:8px 12px;border-bottom:1px solid var(--line)}
+.sources-table td{padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+.sources-table .act{display:flex;gap:6px}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+</head>
+<body>
+
+<div class="band">
+  <b>Arena</b><span class="sub">Admin</span>
+  <span class="spacer"></span>
+  <span class="sync" id="syncInfo"></span>
+  <button id="logout">Keluar</button>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab" data-tab="kandidat" aria-selected="true">Kandidat <span class="b" id="cKandidat">0</span></button>
+  <button class="tab" data-tab="teranalisis">Teranalisis</button>
+  <button class="tab" data-tab="sumber">Sumber</button>
+  <button class="tab" data-tab="config">Konfigurasi</button>
+  <button class="tab" data-tab="crawl">Crawl</button>
+</div>
+
+<div class="view" id="view"></div>
+
+<div id="toastBox"></div>
+
+<script>
+"use strict";
+const view = document.getElementById("view");
+const TABS = ["kandidat","teranalisis","sumber","config","crawl"];
+let curTab = "kandidat";
+
+async function api(path, opts={}){
+  const r = await fetch(path, {
+    headers: opts.body ? {"Content-Type":"application/json"} : {},
+    ...opts,
+    credentials:"same-origin",
+  });
+  if(r.status === 401){ location.reload(); throw new Error("Unauthorized"); }
+  const data = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(data.detail || "Error " + r.status);
+  return data;
+}
+
+function toast(msg, kind="ok"){
+  const t = document.createElement("div");
+  t.className = "toast " + kind;
+  t.textContent = msg;
+  document.getElementById("toastBox").appendChild(t);
+  setTimeout(()=>t.remove(), 4000);
+}
+function esc(s){ return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+/* ── login gate ─────────────────────────────────────────── */
+async function checkAuth(){
+  const r = await fetch("/api/auth/check");
+  if(r.ok) return true;
+  return await showLogin();
+}
+async function showLogin(){
+  view.innerHTML =
+  '<div class="card" style="max-width:360px;margin:80px auto"><div class="card-h">Login admin</div><div class="card-b">' +
+  '<div class="field"><label>Username</label><input id="lgU" autocomplete="username"></div>' +
+  '<div class="field"><label>Password</label><input id="lgP" type="password" autocomplete="current-password"></div>' +
+  '<button class="btn btn-primary" id="lgBtn" style="width:100%">Masuk</button></div></div>';
+  document.getElementById("lgBtn").addEventListener("click", async ()=>{
+    const r = await fetch("/api/auth/login", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+      username:document.getElementById("lgU").value,
+      password:document.getElementById("lgP").value,
+    }),credentials:"same-origin"});
+    const d = await r.json();
+    if(d.ok){ await render(); } else { toast("Kredensial salah","err"); }
+  });
+  return false;
+}
+
+/* ── tabs ───────────────────────────────────────────────── */
+async function render(){
+  for(const t of TABS){
+    const b = document.querySelector(`[data-tab="${t}"]`);
+    b.setAttribute("aria-selected", t === curTab);
+  }
+  if(curTab === "kandidat") await renderKandidat();
+  if(curTab === "teranalisis") await renderTeranalisis();
+  if(curTab === "sumber") await renderSumber();
+  if(curTab === "config") await renderConfig();
+  if(curTab === "crawl") await renderCrawl();
+}
+document.getElementById("tabs").addEventListener("click", e=>{
+  const t = e.target.closest("[data-tab]");
+  if(t){ curTab = t.dataset.tab; render(); }
+});
+
+function badge(label){ return `<span class="badge ${label}">${label}</span>`; }
+
+/* ── kandidat ───────────────────────────────────────────── */
+async function renderKandidat(){
+  const regs = await api("/api/admin/regulations/pending");
+  document.getElementById("cKandidat").textContent = regs.length;
+  if(!regs.length){
+    view.innerHTML = '<div class="card"><div class="empty">Tidak ada kandidat pending. Jalankan crawl dulu (tab Crawl) atau tunggu cron Jumat.</div></div>';
+    return;
+  }
+  view.innerHTML = regs.map(r => `
+    <div class="card"><div class="reg">
+      <div class="meta">
+        <span class="src">${esc(r.source_nama)}</span>
+        <span class="nomor">${esc(r.nomor)}</span>
+        <span class="tgl">${r.tanggal || ""}</span>
+        ${r.triage_label ? badge(r.triage_label) : ""}
+        ${r.status === "failed" ? '<span class="badge status">GAGAL ANALISIS</span>' : ""}
+      </div>
+      <h3>${esc(r.judul)}</h3>
+      ${r.triage_summary ? `<div class="sum">${esc(r.triage_summary)}</div>` : ""}
+      ${r.error ? `<div class="err">${esc(r.error)}</div>` : ""}
+      ${r.url_detail ? `<div class="sum" style="margin-top:6px;font-size:11.5px;font-family:var(--f-mono)"><a href="${esc(r.url_detail)}" target="_blank" style="color:var(--accent)">Buka di JDIH ↗</a></div>` : ""}
+      <div class="acts">
+        <button class="btn btn-good" data-act="approve" data-id="${r.id}">✓ Analisis &amp; Approve</button>
+        <button class="btn btn-skip" data-act="skip" data-id="${r.id}">Skip</button>
+      </div>
+    </div></div>`).join("");
+  bindActs();
+}
+function bindActs(){
+  view.querySelectorAll("[data-act]").forEach(b=>b.addEventListener("click", async ()=>{
+    const id = b.dataset.id, act = b.dataset.act;
+    b.disabled = true; b.textContent = act === "approve" ? "Menganalisis…" : "…";
+    try{
+      if(act === "approve"){ await api(`/api/admin/regulations/${id}/approve`, {method:"POST"}); toast("Analisis selesai"); }
+      else { await api(`/api/admin/regulations/${id}/skip`, {method:"POST"}); toast("Dilewati"); }
+      await render();
+    }catch(e){ toast(e.message, "err"); b.disabled=false; b.textContent = act==="approve" ? "✓ Analisis & Approve" : "Skip"; }
+  }));
+}
+
+/* ── teranalisis ────────────────────────────────────────── */
+async function renderTeranalisis(){
+  const regs = await api("/api/admin/regulations/analyzed");
+  if(!regs.length){
+    view.innerHTML = '<div class="card"><div class="empty">Belum ada regulasi yang dianalisis.</div></div>';
+    return;
+  }
+  view.innerHTML = regs.map(r => `
+    <div class="card">
+      <div class="reg">
+        <div class="meta">
+          <span class="src">${esc(r.source_nama)}</span>
+          <span class="nomor">${esc(r.nomor)}</span>
+          <span class="tgl">${r.tanggal || ""}</span>
+          ${r.dampak ? badge(r.dampak) : ""}
+        </div>
+        <h3>${esc(r.judul)}</h3>
+        ${r.ringkas ? `<div class="sum">${esc(r.ringkas)}</div>` : ""}
+      </div>
+      ${r.delta?.length ? `<div class="sec"><div class="sec-h">Yang berubah</div><ul class="delta">${r.delta.map(d=>`<li>${esc(d)}</li>`).join("")}</ul></div>` : ""}
+      ${r.sektor_terdampak?.length ? `<div class="sec"><div class="sec-h">Industri terdampak</div><div>${r.sektor_terdampak.map(s=>badge("status")+" "+esc(s)).join(" ")}</div></div>` : ""}
+      ${r.watch ? `<div class="sec"><div class="sec-h">Catatan tindak lanjut</div><div class="sum">${esc(r.watch)}</div></div>` : ""}
+      ${r.kontak ? `<div class="sec"><div class="sec-h">Unit kontak</div><div class="sum">${esc(r.kontak)}</div></div>` : ""}
+    </div>`).join("");
+}
+
+/* ── sumber ─────────────────────────────────────────────── */
+async function renderSumber(){
+  const rows = await api("/api/admin/sources");
+  view.innerHTML = `
+    <div class="card"><div class="card-h">Daftar sumber JDIH <span class="spacer"></span>
+      <button class="btn btn-primary" id="addSrc">+ Tambah</button></div>
+    <div class="card-b" style="padding:0">
+      <table class="sources-table">
+        <thead><tr><th>Key</th><th>Nama</th><th>Adapter</th><th>Status</th><th>Crawl terakhir</th><th></th></tr></thead>
+        <tbody>
+        ${rows.map(s=>`<tr>
+          <td><span class="num">${esc(s.key)}</span></td>
+          <td><b>${esc(s.nama)}</b><br><span style="font-size:11px;color:var(--ink3)">${esc(s.full_name)}</span></td>
+          <td><span class="num">${esc(s.adapter)}</span></td>
+          <td>${s.aktif ? '<span class="badge substantif">aktif</span>' : '<span class="badge internal">nonaktif</span>'}</td>
+          <td>${s.last_crawl_at ? new Date(s.last_crawl_at).toLocaleString("id-ID") : "—"}<br><span style="font-size:11px;color:${s.last_crawl_status?.startsWith("GAGAL") ? "var(--crit)" : "var(--ink3)"}">${esc(s.last_crawl_status || "")}</span></td>
+          <td><div class="act"><button class="btn btn-ghost" data-edit="${s.id}">Edit</button><button class="btn btn-danger" data-del="${s.id}">Hapus</button></div></td>
+        </tr>`).join("")}
+        </tbody>
+      </table>
+    </div></div>`;
+
+  document.getElementById("addSrc").addEventListener("click", ()=>srcForm());
+  view.querySelectorAll("[data-edit]").forEach(b=>b.addEventListener("click", ()=>{
+    const s = rows.find(x=>x.id==+b.dataset.edit); srcForm(s);
+  }));
+  view.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click", async ()=>{
+    if(!confirm("Hapus sumber ini?")) return;
+    await api(`/api/admin/sources/${b.dataset.del}`, {method:"DELETE"}); toast("Dihapus"); render();
+  }));
+}
+
+async function srcForm(s){
+  const isNew = !s;
+  s = s || {key:"",nama:"",full_name:"",adapter:"",listing_url:"",aktif:true};
+  view.innerHTML = `
+    <div class="card" style="max-width:760px"><div class="card-h">${isNew ? "Tambah sumber" : "Edit sumber"}</div><div class="card-b">
+      <div class="grid2">
+        <div class="field"><label>Key (unik)</label><input id="fKey" value="${esc(s.key)}" ${isNew?"":"disabled"}></div>
+        <div class="field"><label>Nama singkat</label><input id="fNama" value="${esc(s.nama)}"></div>
+      </div>
+      <div class="field"><label>Nama lengkap</label><input id="fFull" value="${esc(s.full_name)}"></div>
+      <div class="grid2">
+        <div class="field"><label>Adapter</label><select id="fAdapter">${["bkpm","kemenkeu","kemendag","kementan","kkp","kemenperin","esdm","kemnaker","kemkes"].map(a=>`<option ${s.adapter===a?"selected":""}>${a}</option>`).join("")}</select></div>
+        <div class="field"><label>Aktif</label><select id="fAktif"><option value="1" ${s.aktif?"selected":""}>Ya</option><option value="0" ${!s.aktif?"selected":""}>Tidak</option></select></div>
+      </div>
+      <div class="field"><label>URL listing (berisi filter jenis+tahun)</label><textarea id="fUrl" rows="4">${esc(s.listing_url)}</textarea></div>
+      <button class="btn btn-primary" id="saveSrc">Simpan</button>
+      <button class="btn btn-ghost" id="backSrc">← Kembali</button>
+    </div></div>`;
+  document.getElementById("saveSrc").addEventListener("click", async ()=>{
+    const body = {
+      key: (document.getElementById("fKey").value || s.key).trim(),
+      nama: document.getElementById("fNama").value.trim(),
+      full_name: document.getElementById("fFull").value.trim(),
+      adapter: document.getElementById("fAdapter").value,
+      aktif: document.getElementById("fAktif").value === "1",
+      listing_url: document.getElementById("fUrl").value.trim(),
+    };
+    try{
+      if(isNew) await api("/api/admin/sources", {method:"POST",body:JSON.stringify(body)});
+      else await api(`/api/admin/sources/${s.id}`, {method:"PUT",body:JSON.stringify(body)});
+      toast("Disimpan"); render();
+    }catch(e){ toast(e.message,"err"); }
+  });
+  document.getElementById("backSrc").addEventListener("click", render);
+}
+
+/* ── konfigurasi ────────────────────────────────────────── */
+async function renderConfig(){
+  const rows = await api("/api/admin/config");
+  view.innerHTML = `
+    <div class="card"><div class="card-h">Konfigurasi AI &amp; model</div><div class="card-b">
+    <div class="hint" style="margin-bottom:12px">API key tersimpan di DB (tersembunyi). Isi Mistral untuk parsing OCR dokumen. Kosongkan saat ini — diisi manual oleh admin.</div>
+    ${rows.map(r=>{
+      const masked = r.value === "[tersimpan]";
+      return `<div class="field"><label>${esc(r.key)}</label>
+        <input id="cfg-${esc(r.key)}" type="password" value="${r.is_secret && masked ? "" : esc(r.value)}" placeholder="${r.is_secret ? "[tersimpan]" : ""}">
+        <div class="hint">${r.is_secret ? "secret — disimpan terenkripsi (masked)" : "bukan secret"}</div></div>`;
+    }).join("")}
+    <button class="btn btn-primary" id="saveCfg">Simpan konfigurasi</button>
+    </div></div>`;
+  document.getElementById("saveCfg").addEventListener("click", async ()=>{
+    for(const r of rows){
+      const el = document.getElementById("cfg-"+r.key);
+      if(el && el.value !== ""){
+        await api(`/api/admin/config/${r.key}`, {method:"PUT",body:JSON.stringify({value:el.value})});
+      }
+    }
+    toast("Konfigurasi disimpan"); render();
+  });
+}
+
+/* ── crawl ──────────────────────────────────────────────── */
+async function renderCrawl(){
+  view.innerHTML = `
+    <div class="card"><div class="card-h">Crawl manual</div><div class="card-b">
+      <p style="color:var(--ink2);font-size:13px">Menjalankan crawl semua sumber JDIH (biasanya otomatis tiap Jumat via n8n). Item baru masuk sebagai kandidat pending di tab Kandidat.</p>
+      <button class="btn btn-primary" id="runCrawl">▶ Jalankan crawl sekarang</button>
+      <pre id="crawlOut" style="margin-top:14px;background:var(--raise);border:1px solid var(--line);border-radius:4px;padding:14px;font-family:var(--f-mono);font-size:12px;white-space:pre-wrap;display:none"></pre>
+    </div></div>`;
+  document.getElementById("runCrawl").addEventListener("click", async ()=>{
+    const b = document.getElementById("runCrawl"); b.disabled = true; b.textContent = "Menjalankan…";
+    const out = document.getElementById("crawlOut"); out.style.display = "block"; out.textContent = "Crawl berjalan…";
+    try{
+      const r = await api("/api/crawl/run", {method:"POST"});
+      out.textContent = JSON.stringify(r, null, 2);
+      toast(`Selesai: ${r.total_baru} baru dari ${r.total_ditemukan} ditemukan`);
+      render();
+    }catch(e){ out.textContent = "ERROR: "+e.message; toast(e.message,"err"); }
+    finally{ b.disabled=false; b.textContent="▶ Jalankan crawl sekarang"; }
+  });
+}
+
+/* ── init ───────────────────────────────────────────────── */
+document.getElementById("logout").addEventListener("click", async ()=>{
+  await api("/api/auth/logout", {method:"POST"}); location.reload();
+});
+(async ()=>{ if(await checkAuth()) await render(); })();
+</script>
+</body>
+</html>

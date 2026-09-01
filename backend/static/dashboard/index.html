@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Arena · Public Affairs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --paper:#EEEDF3; --surface:#F8F7FB; --raise:#FFFFFF;
+  --ink:#191B2A; --ink2:#454761; --ink3:#7B7C93;
+  --line:#D5D3E0; --line-soft:#E4E2ED;
+  --accent:#5A4FA3; --accent-on:#FFFFFF; --accent-wash:rgba(90,79,163,.10);
+  --crit:#B3372C; --warn:#A8760F; --good:#1E7A5A;
+  --crit-wash:rgba(179,55,44,.10); --warn-wash:rgba(168,118,15,.12); --good-wash:rgba(30,122,90,.10);
+  --f-disp:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#121220; --surface:#191927; --raise:#1F1F30;
+    --ink:#EAE9F4; --ink2:#B3B1C8; --ink3:#7E7C95;
+    --line:#2E2E44; --line-soft:#252537;
+    --accent:#9F92F0; --accent-on:#15152A; --accent-wash:rgba(159,146,240,.14);
+    --crit:#E8756A; --warn:#DFAE4C; --good:#4FBF95;
+    --crit-wash:rgba(232,117,106,.13); --warn-wash:rgba(223,174,76,.13); --good-wash:rgba(79,191,149,.13);
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input{font:inherit;color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+a{color:var(--accent)}
+
+.band{display:flex;align-items:center;gap:18px;padding:0 20px;height:56px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:40}
+.mark{display:flex;align-items:baseline;gap:10px;width:calc(var(--rail,236px) - 20px);flex:none}
+.mark b{font-family:var(--f-disp);font-weight:700;font-size:19px;letter-spacing:.16em;text-transform:uppercase}
+.mark span{font-family:var(--f-mono);font-size:9.5px;color:var(--ink3);letter-spacing:.09em;text-transform:uppercase}
+.band-mid{flex:1;min-width:0;overflow:hidden}
+.band-right{display:flex;align-items:center;gap:14px;flex:none}
+.sync{display:flex;align-items:center;gap:7px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink3);white-space:nowrap}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--good);animation:pulse 2.8s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 var(--good-wash)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.theme-btn{width:28px;height:28px;display:grid;place-items:center;border:1px solid var(--line);border-radius:3px;color:var(--ink2);font-family:var(--f-mono);font-size:12px}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.shell{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:calc(100vh - 56px)}
+.rail{border-right:1px solid var(--line);background:var(--surface);padding:14px 0 40px;position:sticky;top:56px;align-self:start;height:calc(100vh - 56px);overflow-y:auto}
+.rail-sec{padding:20px 18px 0}
+.rail-h{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);padding-bottom:9px;margin-bottom:8px;border-bottom:1px solid var(--line-soft)}
+.chk{display:flex;align-items:center;gap:9px;padding:4.5px 0;cursor:pointer;color:var(--ink2)}
+.chk:hover{color:var(--ink)}
+.chk input{appearance:none;width:13px;height:13px;flex:none;border:1px solid var(--line);border-radius:2px;background:var(--raise);position:relative;cursor:pointer}
+.chk input:checked{background:var(--accent);border-color:var(--accent)}
+.chk input:checked::after{content:"";position:absolute;left:3.6px;top:1px;width:3.2px;height:7px;border:solid var(--accent-on);border-width:0 1.6px 1.6px 0;transform:rotate(42deg)}
+.chk .t{flex:1;font-size:12.5px;line-height:1.35}
+.chk .n{font-family:var(--f-mono);font-size:10.5px;color:var(--ink3)}
+.rail-note{font-size:12px;line-height:1.6;color:var(--ink3)}
+
+.work{display:flex;flex-direction:column;min-width:0}
+.subnav{display:flex;align-items:center;gap:2px;padding:0 20px;height:46px;border-bottom:1px solid var(--line);background:var(--paper);position:sticky;top:56px;z-index:30}
+.subnav .spacer{flex:1}
+.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:3px;padding:5px 10px;background:var(--raise);min-width:220px}
+.search input{border:0;background:none;font:inherit;font-size:12.5px;width:100%;outline:0}
+.search input::placeholder{color:var(--ink3)}
+.search .ic{font-family:var(--f-mono);font-size:11px;color:var(--ink3)}
+
+.split{display:grid;grid-template-columns:minmax(0,1fr) 392px;flex:1;min-height:0}
+.stream{min-width:0;border-right:1px solid var(--line)}
+.dossier{position:sticky;top:102px;align-self:start;height:calc(100vh - 102px);overflow-y:auto;background:var(--surface)}
+
+.lg-head{display:grid;grid-template-columns:76px 104px minmax(0,1fr) 72px;gap:14px;padding:9px 20px;border-bottom:1px solid var(--line);font-family:var(--f-mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3);background:var(--surface);position:sticky;top:102px;z-index:20}
+.row{display:grid;grid-template-columns:76px 104px minmax(0,1fr) 72px;gap:14px;padding:13px 20px 13px 17px;width:100%;text-align:left;border-bottom:1px solid var(--line-soft);border-left:3px solid transparent;align-items:start}
+.row:hover{background:var(--accent-wash)}
+.row.sev-high{border-left-color:var(--crit)}
+.row.sev-med{border-left-color:var(--warn)}
+.row.sev-low{border-left-color:var(--line)}
+.row[aria-current="true"]{background:var(--accent-wash);box-shadow:inset 2px 0 0 var(--accent)}
+.r-date{font-family:var(--f-mono);font-size:10.5px;color:var(--ink3);padding-top:2px}
+.r-date b{display:block;font-weight:500;color:var(--ink2);font-size:12px}
+.r-src{font-family:var(--f-mono);font-size:10px;letter-spacing:.03em;color:var(--ink2);padding-top:3px;line-height:1.35}
+.r-title{font-family:var(--f-disp);font-weight:600;font-size:14.5px;line-height:1.35;letter-spacing:-.005em;text-wrap:balance}
+.r-brief{color:var(--ink3);font-size:12.5px;line-height:1.45;margin-top:3px;max-width:66ch}
+.r-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.tag{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);border:1px solid var(--line);border-radius:2px;padding:1.5px 5px}
+.r-sev{padding-top:2px}
+.sev{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;padding:2px 6px;border-radius:2px;display:inline-block}
+.sev.high{color:var(--crit);background:var(--crit-wash)}
+.sev.med{color:var(--warn);background:var(--warn-wash)}
+.sev.low{color:var(--ink3);background:var(--line-soft)}
+.empty{padding:64px 20px;text-align:center;color:var(--ink3);font-size:13px}
+
+.dos-top{padding:18px 22px 15px;border-bottom:1px solid var(--line)}
+.dos-eyebrow{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);display:flex;justify-content:space-between;gap:10px;margin-bottom:9px}
+.dos-title{font-family:var(--f-disp);font-weight:700;font-size:19px;line-height:1.25;letter-spacing:-.015em;text-wrap:balance}
+.dos-meta{margin:13px 0 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 14px;font-size:12.5px}
+.dos-meta dt{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding-top:2px}
+.dos-meta dd{margin:0;color:var(--ink2)}
+.dos-sec{padding:16px 22px;border-bottom:1px solid var(--line-soft)}
+.dos-h{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px}
+.dos-sec p{margin:0;font-size:13px;line-height:1.62;color:var(--ink2)}
+.deltas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.deltas li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:8px;font-size:12.5px;line-height:1.5;color:var(--ink2)}
+.deltas .mk{font-family:var(--f-mono);font-size:10.5px;color:var(--accent);padding-top:2px}
+.watch{border-left:2px solid var(--accent);padding:2px 0 2px 12px;font-size:13px;line-height:1.55;color:var(--ink)}
+.dos-acts{padding:16px 22px 40px;display:flex;flex-direction:column;gap:8px}
+.act{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:3px;padding:9px 12px;font-size:12.5px;color:var(--ink2);background:var(--raise);width:100%;text-align:left}
+.act:hover{border-color:var(--accent);color:var(--accent)}
+.act .k{font-family:var(--f-mono);font-size:10px;color:var(--ink3)}
+.dos-blank{padding:72px 26px;color:var(--ink3);font-size:13px;line-height:1.65;text-align:center}
+.dos-blank b{display:block;font-family:var(--f-mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;margin-bottom:10px}
+.loading{padding:64px 20px;text-align:center;color:var(--ink3);font-size:13px}
+
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+@media (max-width:1240px){.row,.lg-head{grid-template-columns:70px 96px minmax(0,1fr)}.r-sev{display:none}}
+@media (max-width:960px){
+  .shell{grid-template-columns:1fr}
+  .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .split{grid-template-columns:1fr}
+  .stream{border-right:0;border-bottom:1px solid var(--line)}
+  .dossier{position:static;height:auto}
+  .lg-head,.subnav,.band{position:static}
+  .band{height:auto;padding:10px 16px;flex-wrap:wrap;gap:10px}
+  .mark{width:auto}
+  .band-mid{order:3;width:100%}
+  .row,.lg-head{grid-template-columns:62px minmax(0,1fr)}
+  .r-src{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="mark"><b>Arena</b><span>Public Affairs</span></div>
+  <div class="band-mid" id="bandMid"></div>
+  <div class="band-right">
+    <span class="sync"><span class="pulse"></span><span id="syncTxt">memuat…</span></span>
+    <button class="theme-btn" id="themeBtn" title="Ganti tema" aria-label="Ganti tema">◐</button>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="rail">
+    <div id="railFilters"></div>
+  </nav>
+  <main class="work">
+    <div class="subnav">
+      <span class="spacer"></span>
+      <div class="search"><span class="ic">/</span><input id="q" placeholder="Cari judul, nomor, sektor…"></div>
+    </div>
+    <div id="view"><div class="loading">Memuat data regulasi…</div></div>
+  </main>
+</div>
+
+<script>
+"use strict";
+let REGS = [];
+let PICK = null;
+const F = { lem:new Set(), dampak:new Set() };
+const BULAN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const DAMPAK_LBL = { high:"Tinggi", med:"Sedang", low:"Rendah" };
+
+async function load(){
+  try{
+    const r = await fetch("/api/dashboard/regulations");
+    REGS = await r.json();
+    $("#syncTxt").textContent = REGS.length + " regulasi · dianalisis AI";
+    $("#bandMid").innerHTML = `<span style="font-family:var(--f-mono);font-size:10px;color:var(--ink3)">Aliran regulasi teranalisis · feed JDIH 9 kementerian</span>`;
+    F.lem = new Set([...new Set(REGS.map(r=>r.source_key))]);
+    F.dampak = new Set(["high","med","low"]);
+    if(REGS.length) PICK = REGS[0].id;
+    render();
+  }catch(e){
+    $("#view").innerHTML = `<div class="empty">Gagal memuat data: ${esc(e.message)}<br>Pastikan backend & database berjalan.</div>`;
+  }
+}
+
+function filtered(){
+  const q = $("#q").value.trim().toLowerCase();
+  return REGS.filter(r =>
+    F.lem.has(r.source_key) && F.dampak.has(r.dampak) &&
+    (!q || (r.judul + " " + (r.nomor||"") + " " + (r.sektor_terdampak||[]).join(" ")).toLowerCase().includes(q))
+  );
+}
+
+function tglShort(iso){
+  if(!iso) return {d:"—",m:"",y:""};
+  const d = new Date(iso + "T00:00:00");
+  return { d:String(d.getDate()).padStart(2,"0"), m:BULAN[d.getMonth()], y:d.getFullYear() };
+}
+
+function renderRail(){
+  const src = {};
+  REGS.forEach(r => src[r.source_key] = (src[r.source_key]||0)+1);
+  const names = {};
+  REGS.forEach(r => names[r.source_key] = r.source_nama);
+  $("#railFilters").innerHTML =
+    '<div class="rail-sec"><div class="rail-h">Sumber</div>' +
+    Object.entries(src).map(([k,n]) =>
+      `<label class="chk"><input type="checkbox" data-lem="${k}" ${F.lem.has(k)?"checked":""}><span class="t">${esc(names[k])}</span><span class="n">${n}</span></label>`
+    ).join("") + '</div>' +
+    '<div class="rail-sec"><div class="rail-h">Bobot dampak</div>' +
+    [["high","Tinggi"],["med","Sedang"],["low","Rendah"]].map(([k,l]) =>
+      `<label class="chk"><input type="checkbox" data-dmp="${k}" ${F.dampak.has(k)?"checked":""}><span class="t">${l}</span><span class="n">${REGS.filter(r=>r.dampak===k).length}</span></label>`
+    ).join("") + '</div>' +
+    '<div class="rail-sec"><div class="rail-h">Catatan</div><div class="rail-note">Data dianalisis otomatis dari dokumen JDIH. Halaman ini read-only; pengelolaan di /admin.</div></div>';
+}
+
+function rowHTML(r){
+  const t = tglShort(r.tanggal);
+  return `<button class="row sev-${r.dampak}" data-reg="${r.id}" aria-current="${PICK===r.id}">` +
+    `<span class="r-date"><b>${t.d} ${t.m}</b>${t.y}</span>` +
+    `<span class="r-src">${esc(r.source_nama)}</span>` +
+    `<span><span class="r-title">${esc(r.judul)}</span>` +
+    `<span class="r-brief">${esc(r.ringkas || "")}</span>` +
+    `<span class="r-tags">${(r.sektor_terdampak||[]).map(s=>`<span class="tag">${esc(s)}</span>`).join("")}</span></span>` +
+    `<span class="r-sev"><span class="sev ${r.dampak}">${DAMPAK_LBL[r.dampak]}</span></span>` +
+    `</button>`;
+}
+
+function dossierHTML(){
+  const r = REGS.find(x => x.id === PICK);
+  if(!r) return '<div class="dos-blank"><b>Tidak ada dokumen terpilih</b>Pilih satu baris di kiri untuk membuka ringkasan.</div>';
+  return '<div class="dos-top">' +
+    '<div class="dos-eyebrow"><span>' + esc(r.jenis) + '</span><span>' + esc(r.nomor) + '</span></div>' +
+    '<h2 class="dos-title">' + esc(r.judul) + '</h2>' +
+    '<dl class="dos-meta">' +
+    '<dt>Penerbit</dt><dd>' + esc(r.source_nama) + '</dd>' +
+    '<dt>Tanggal</dt><dd>' + esc(r.tanggal || "—") + '</dd>' +
+    '<dt>Dampak</dt><dd>' + DAMPAK_LBL[r.dampak] + '</dd>' +
+    '<dt>Unit</dt><dd>' + esc(r.kontak || "—") + '</dd>' +
+    '<dt>Sektor</dt><dd>' + (r.sektor_terdampak||[]).join(", ") + '</dd></dl></div>' +
+    '<div class="dos-sec"><div class="dos-h">Ringkasan</div><p>' + esc(r.ringkas || "") + '</p></div>' +
+    '<div class="dos-sec"><div class="dos-h">Yang berubah</div><ul class="deltas">' +
+    (r.delta||[]).map((d,i) => `<li><span class="mk">${String(i+1).padStart(2,"0")}</span><span>${esc(d)}</span></li>`).join("") +
+    '</ul></div>' +
+    '<div class="dos-sec"><div class="dos-h">Catatan tindak lanjut</div><div class="watch">' + esc(r.watch || "") + '</div></div>' +
+    '<div class="dos-acts">' +
+    (r.url_detail ? '<a class="act" href="' + esc(r.url_detail) + '" target="_blank"><span>Buka dokumen di JDIH</span><span class="k">↗</span></a>' : "") +
+    (r.url_pdf ? '<a class="act" href="' + esc(r.url_pdf) + '" target="_blank"><span>Buka PDF asli</span><span class="k">pdf</span></a>' : "") +
+    '</div>';
+}
+
+function render(){
+  renderRail();
+  const f = filtered();
+  if(f.length && !f.some(r=>r.id===PICK)) PICK = f[0].id;
+  if(!f.length){
+    $("#view").innerHTML = '<div class="split"><div class="stream"><div class="empty">Belum ada regulasi yang cocok.</div></div></div>';
+    return;
+  }
+  $("#view").innerHTML = '<div class="split"><div class="stream">' +
+    '<div class="lg-head"><span>Tanggal</span><span class="h-src">Sumber</span><span>Dokumen</span><span class="h-sev">Dampak</span></div>' +
+    f.map(rowHTML).join("") +
+    '</div><aside class="dossier">' + dossierHTML() + '</aside></div>';
+}
+
+document.addEventListener("click", e => {
+  const reg = e.target.closest("[data-reg]");
+  if(reg){ PICK = +reg.dataset.reg; render(); return; }
+  if(e.target.id === "themeBtn"){
+    const cur = document.documentElement.getAttribute("data-theme");
+    const sysDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const nowDark = cur ? cur === "dark" : sysDark;
+    document.documentElement.setAttribute("data-theme", nowDark ? "light" : "dark");
+  }
+});
+document.addEventListener("change", e => {
+  if(e.target.dataset.lem){ e.target.checked ? F.lem.add(e.target.dataset.lem) : F.lem.delete(e.target.dataset.lem); render(); }
+  if(e.target.dataset.dmp){ e.target.checked ? F.dampak.add(e.target.dataset.dmp) : F.dampak.delete(e.target.dataset.dmp); render(); }
+});
+document.addEventListener("input", e => { if(e.target.id === "q") render(); });
+document.addEventListener("keydown", e => {
+  if(e.key === "/" && document.activeElement.tagName !== "INPUT"){
+    const q = document.getElementById("q");
+    if(q){ e.preventDefault(); q.focus(); }
+  }
+});
+
+load();
+</script>
+</body>
+</html>
